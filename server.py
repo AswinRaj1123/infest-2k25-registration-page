@@ -12,7 +12,7 @@ import os
 app = FastAPI()
 
 # MongoDB Connection
-MONGO_URI = "mongodb+srv://infest2k25testcase:AAuxkvcJcaNhIBsx@infest-2k25userdata.jwvo6.mongodb.net/?retryWrites=true&w=majority&appName=INFEST-2K25UserData"
+MONGO_URI = "mongodb+srv://infest2k25:infest2k25india@infest-2k25.3mv5l.mongodb.net/?retryWrites=true&w=majority&appName=INFEST-2K25"
 client = MongoClient(MONGO_URI)
 db = client["infest_db"]
 collection = db["registrations"]
@@ -41,11 +41,12 @@ def generate_ticket_id():
 def generate_qr(ticket_id):
     qr = qrcode.make(ticket_id)
     qr_path = f"qrcodes/{ticket_id}.png"
+    os.makedirs(os.path.dirname(qr_path), exist_ok=True)
     qr.save(qr_path)
     return qr_path
 
 # Function to Send Confirmation Email
-def send_email(user_email, ticket_id, qr_path):
+def send_email(user_email, ticket_id, qr_path, user_data):
     msg = MIMEMultipart()
     msg["From"] = EMAIL_USER
     msg["To"] = user_email
@@ -54,6 +55,15 @@ def send_email(user_email, ticket_id, qr_path):
     body = f"""
     <h2>Thank you for registering for INFEST 2K25!</h2>
     <p>Your ticket ID: <b>{ticket_id}</b></p>
+    <p>Full Name: {user_data['name']}</p>
+    <p>Email: {user_data['email']}</p>
+    <p>Phone: {user_data['phone']}</p>
+    <p>WhatsApp: {user_data['whatsapp']}</p>
+    <p>College: {user_data['college']}</p>
+    <p>Year: {user_data['year']}</p>
+    <p>Department: {user_data['department']}</p>
+    <p>Events: {', '.join(user_data['events'])}</p>
+    <p>Payment Mode: {user_data['payment_mode']}</p>
     <p>Show the attached QR code at the event check-in.</p>
     """
     msg.attach(MIMEText(body, "html"))
@@ -84,6 +94,16 @@ async def register_user(data: RegistrationData):
 
     collection.insert_one(user_data)
 
-    email_sent = send_email(data.email, ticket_id, qr_path)
+    email_sent = send_email(data.email, ticket_id, qr_path, user_data)
 
     return {"status": "success", "ticket_id": ticket_id, "qr_code": qr_path, "email_sent": email_sent}
+
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins (Change to specific origins for security)
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
+)

@@ -1,8 +1,10 @@
 document.addEventListener("DOMContentLoaded", function () {
     const steps = document.querySelectorAll(".step");
     const formSections = document.querySelectorAll(".form-section");
-    const nextButtons = document.querySelectorAll(".primary-btn"); // For next step navigation
-    const prevButtons = document.querySelectorAll(".secondary-btn"); // For previous step navigation
+    const nextStepBtn = document.getElementById("next-step-btn");
+    const nextToPaymentBtn = document.getElementById("next-to-payment");
+    const backToPersonalBtn = document.getElementById("back-to-personal");
+    const backToEventsBtn = document.getElementById("back-to-events");
     const submitButton = document.getElementById("submit-registration");
     const successContainer = document.getElementById("success-container");
     const registrationForm = document.getElementById("registration-form");
@@ -23,26 +25,40 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // ✅ Event Listener for Next Buttons
-    nextButtons.forEach(button => {
-        button.addEventListener("click", function (event) {
-            event.preventDefault();
-            if (currentStep < formSections.length - 1) {
-                currentStep++;
-                updateStep(currentStep);
-            }
-        });
+    // ✅ Event Listener for Next Step Button
+    nextStepBtn.addEventListener("click", function (event) {
+        event.preventDefault();
+        if (currentStep < formSections.length - 1) {
+            currentStep++;
+            updateStep(currentStep);
+        }
     });
 
-    // ✅ Event Listener for Previous Buttons
-    prevButtons.forEach(button => {
-        button.addEventListener("click", function (event) {
-            event.preventDefault();
-            if (currentStep > 0) {
-                currentStep--;
-                updateStep(currentStep);
-            }
-        });
+    // ✅ Event Listener for Next to Payment Button
+    nextToPaymentBtn.addEventListener("click", function (event) {
+        event.preventDefault();
+        if (currentStep < formSections.length - 1) {
+            currentStep++;
+            updateStep(currentStep);
+        }
+    });
+
+    // ✅ Event Listener for Back to Personal Button
+    backToPersonalBtn.addEventListener("click", function (event) {
+        event.preventDefault();
+        if (currentStep > 0) {
+            currentStep--;
+            updateStep(currentStep);
+        }
+    });
+
+    // ✅ Event Listener for Back to Events Button
+    backToEventsBtn.addEventListener("click", function (event) {
+        event.preventDefault();
+        if (currentStep > 0) {
+            currentStep--;
+            updateStep(currentStep);
+        }
     });
 
     // ✅ Form Submission - Sends data to backend (MongoDB)
