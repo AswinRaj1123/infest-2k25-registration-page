@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Form
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import qrcode
 import smtplib
@@ -8,18 +8,24 @@ from email.mime.image import MIMEImage
 from pymongo import MongoClient
 import random
 import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+os.makedirs("qrcodes", exist_ok=True)
 
 app = FastAPI()
 
-# MongoDB Connection
-MONGO_URI = "mongodb+srv://infest2k25:infest2k25india@infest-2k25.3mv5l.mongodb.net/?retryWrites=true&w=majority&appName=INFEST-2K25"
+# MongoDB Connection - Use environment variables
+MONGO_URI = os.getenv("MONGO_URI")
 client = MongoClient(MONGO_URI)
 db = client["infest_db"]
 collection = db["registrations"]
 
-# Email Configuration
-EMAIL_USER = "infest2k25@gmail.com"
-EMAIL_PASS = "rmac uddi oxbj qaxa"
+# Email Configuration - Use environment variables
+EMAIL_USER = os.getenv("EMAIL_USER")
+EMAIL_PASS = os.getenv("EMAIL_PASS")
 
 # Pydantic Model for Validation
 class RegistrationData(BaseModel):
@@ -92,7 +98,10 @@ async def register_user(data: RegistrationData):
     user_data = data.dict()
     user_data["ticket_id"] = ticket_id
 
-    collection.insert_one(user_data)
+    try:
+       collection.insert_one(user_data)
+    except Exception as e:
+       raise HTTPException(status_code=500, detail=f"Database Error: {str(e)}")
 
     email_sent = send_email(data.email, ticket_id, qr_path, user_data)
 
@@ -107,3 +116,9 @@ app.add_middleware(
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
 )
+
+# Run the app with the port from environment variables
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("server:app", host="0.0.0.0", port=port, reload=True)
