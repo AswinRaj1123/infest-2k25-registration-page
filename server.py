@@ -14,7 +14,7 @@ os.makedirs("qrcodes", exist_ok=True)
 app = FastAPI()
 
 # MongoDB Connection
-MONGO_URI = "mongodb+srv://infest2k25:infest2k25@infest-2k25.3mv5l.mongodb.net/?retryWrites=true&w=majority&appName=INFEST-2K25"
+MONGO_URI = "mongodb+srv://infest2k25:infest2k25test@infest-2k25.3mv5l.mongodb.net/?retryWrites=true&w=majority&appName=INFEST-2K25"
 client = MongoClient(MONGO_URI)
 db = client["infest_db"]
 collection = db["registrations"]
