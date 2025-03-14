@@ -13,6 +13,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const ticketQRCode = document.getElementById("qrcode");
     let currentStep = 0;
 
+
+
     // ✅ Function to update form steps and progress bar
     function updateStep(step) {
         formSections.forEach((section, index) => {
@@ -26,14 +28,29 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // ✅ Event Listener for Next Step Button
+
     nextStepBtn.addEventListener("click", function (event) {
         event.preventDefault();
+    
+        const selectedDepartment = document.getElementById("department").value; // Get selected department
         if (currentStep < formSections.length - 1) {
             currentStep++;
             updateStep(currentStep);
+    
+            // Filter and display relevant events
+            document.querySelectorAll(".event").forEach(event => {
+                const eventDepartment = event.getAttribute("data-department");
+    
+                // Display events that match the selected department or are common for all
+                if (eventDepartment === selectedDepartment || eventDepartment === "ALL") {
+                    event.style.display = "block"; 
+                } else {
+                    event.style.display = "none";
+                }
+            });
         }
     });
-
+    
     // ✅ Event Listener for Next to Payment Button
     nextToPaymentBtn.addEventListener("click", function (event) {
         event.preventDefault();
