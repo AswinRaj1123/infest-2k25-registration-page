@@ -103,6 +103,21 @@ document.addEventListener("DOMContentLoaded", function () {
             name, email, phone, whatsapp, college, year, department,
             events: selectedEvents, payment_mode
         };
+        document.getElementById('submit-registration').addEventListener('click', function(event) {
+            const button = event.target;
+
+            // Disable the button
+            button.disabled = true;
+
+            // Change button text to indicate waiting
+            button.textContent = "Please wait...";
+
+            // Re-enable the button after 10 seconds
+            setTimeout(() => {
+                button.disabled = false;
+                button.textContent = "Finish Registration";
+            }, 10000);
+        });
 
         try {
             const response = await fetch("http://localhost:8000/register", {

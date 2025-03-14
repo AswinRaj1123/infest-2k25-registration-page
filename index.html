@@ -144,6 +144,8 @@
                                 <option value="mech">Mechanical Engineering</option>
                                 <option value="sandh">Science & Humanities</option>
                                 <option value="mba">Masters and Business Administration</option>
+                                <option value="Others">Others</option>
+
                             </select>
                             <i class="fas fa-chevron-down"></i>
                         </div>
@@ -158,37 +160,40 @@
                 </div>
             </div>
             
-            <!-- Event Selection Section -->
-            <div id="event-selection" class="form-section hidden">
+             <!-- Event Selection Section -->
+             <div id="event-selection" class="form-section hidden">
                 <h2 class="section-title"><i class="fas fa-calendar-check"></i> Select Your Events</h2>
                 
-                <div class="event-categories">
+               <!-- <div class="event-categories">
                     <button class="category-btn active" data-category="all">All Events</button>
                     <button class="category-btn" data-category="technical">Technical</button>
                     <button class="category-btn" data-category="cultural">Cultural</button>
                     <button class="category-btn" data-category="workshop">Workshops</button>
-                </div>
+                </div> -->
                 
                 <div class="hint">You can select up to 3 events.</div>
                 
-                <div class="events-grid" style="display:block;">
-                    <!-- Technical Events -->
-                    <div class="event" data-department="cse" data-category="technical">
-                        <div class="event-icon"><i class="fas fa-code"></i></div>
-                        <div class="event-details">
+           <!--    <div class="events-grid">
+                     Technical Events 
+                    <div class="event-card" data-category="technical">
+                        <div class="left-section">
+                            <div class="event-icon"><i class="fas fa-code"></i></div>
+                            <div class="event-details">
                             <h3>Code Sprint</h3>
                             <p>Competitive coding challenge</p>
+                            </div>
                         </div>
+                        
                         <div class="event-select">
                             <input type="checkbox" id="event1" name="selected_events[]" value="code_sprint">
                             <label for="event1"></label>
                         </div>
                     </div>
                     
-                    <div class="event" data-department="it" data-category="technical">
+                    <div class="event-card" data-category="technical">
                         <div class="event-icon"><i class="fas fa-robot"></i></div>
                         <div class="event-details">
-                            <h3>AI Challenge</h3>
+                            <h3 >AI Challenge</h3>
                             <p>Build AI solutions for real problems</p>
                         </div>
                         <div class="event-select">
@@ -197,8 +202,8 @@
                         </div>
                     </div>
                     
-                    <!-- Cultural Events -->
-                    <div class="event" data-department="it"data-category="cultural">
+                     Cultural Events 
+                    <div class="event-card" data-category="cultural">
                         <div class="event-icon"><i class="fas fa-music"></i></div>
                         <div class="event-details">
                             <h3>Battle of Bands</h3>
@@ -210,7 +215,7 @@
                         </div>
                     </div>
                     
-                    <div class="event" data-department="it"data-category="cultural">
+                    <div class="event-card" data-category="cultural">
                         <div class="event-icon"><i class="fas fa-paint-brush"></i></div>
                         <div class="event-details">
                             <h3>Art Exhibition</h3>
@@ -222,8 +227,8 @@
                         </div>
                     </div>
                     
-                    <!-- Workshop Events -->
-                    <div class="event" data-department="it" data-category="workshop">
+                     Workshop Events 
+                    <div class="event-card" data-category="workshop">
                         <div class="event-icon"><i class="fas fa-vr-cardboard"></i></div>
                         <div class="event-details">
                             <h3>AR/VR Workshop</h3>
@@ -235,7 +240,7 @@
                         </div>
                     </div>
                     
-                    <div class="event" data-department="it" data-category="workshop">
+                    <div class="event-card" data-category="workshop">
                         <div class="event-icon"><i class="fas fa-microchip"></i></div>
                         <div class="event-details">
                             <h3>IoT Masterclass</h3>
@@ -246,8 +251,126 @@
                             <label for="event6"></label>
                         </div>
                     </div>
-                </div>
-                
+                </div> -->
+                <h3>Departments of CSE, IT, AI & DS</h3>
+                    <div class="dropdown-container">
+                        <div id="dropdown-menu" class="dropdown-content">
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="CSE, IT, AI & DS Paper Presentation"> Paper Presentation</label>
+                            </div>
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="CSE, IT, AI & DS Project Presentation"> Project Presentation</label>
+                            </div>
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="Google Hunt"> Google Hunt</label>
+                            </div>
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="Crash Your Codes"> Crash Your Codes</label>
+                            </div>
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="Web Master"> Web Master</label>
+                            </div>
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="Gaming"> Gaming</label>
+                            </div>
+                        </div>
+                    </div>
+                <h3>Departments of ECE & EEE</h3>
+                    <div class="dropdown-container">
+                        <div id="dropdown-menu" class="dropdown-content">
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="ECE & EEE Paper Presentation"> Paper Presentation</label>
+                            </div>
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="ECE & EEE Project Presentation"> Project Presentation</label>
+                            </div>
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="Tech Connection"> Tech Connection</label>
+                            </div>
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="Circuit Debugging"> Circuit Debugging</label>
+                            </div>
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="Technical Quiz"> Technical Quiz</label>
+                            </div>
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="ECE & EEE Treasure Hunt"> Treasure Hunt</label>
+                            </div>
+                        </div>
+                    </div>
+                <h3>Department of MECH</h3>
+                    <div class="dropdown-container">
+                        <div id="dropdown-menu" class="dropdown-content">
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="MECH Paper Presentation"> Paper Presentation</label>
+                            </div>
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="MECH Project Presentation"> Project Presentation</label>
+                            </div>
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="CAD Master"> CAD Master</label>
+                            </div>
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="Fun Series"> Fun Series</label>
+                            </div>
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="Watery Rocketry"> Watery Rocketry</label>
+                            </div>
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="Mr. Mechanic"> Mr. Mechanic</label>
+                            </div>
+                        </div>
+                    </div>
+                <h3>Department of S & H</h3>
+                    <div class="dropdown-container">
+                        <div id="dropdown-menu" class="dropdown-content">
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="S & H Paper Presentation"> Paper Presentation</label>
+                            </div>
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="Fun Quiz"> Fun Quiz</label>
+                            </div>
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="Technical Debate"> Technical Debate</label>
+                            </div>
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="Pencil Sketch & Painting"> Pencil Sketch & Painting</label>
+                            </div>
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="Math Puzzles"> Math Puzzles</label>
+                            </div>
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="Karaoke Singing"> Karaoke Singing</label>
+                            </div>
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="Drama or Mime"> Drama or Mime</label>
+                            </div>
+                        </div>
+                    </div>
+                    <h3>Department of MBA</h3>
+                    <div class="dropdown-container">
+                        <div id="dropdown-menu" class="dropdown-content">
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="MBA Paper Presentation"> Paper Presentation</label>
+                            </div>
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="Best Manager"> Best Manager</label>
+                            </div>
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="Business Quiz"> Business Quiz</label>
+                            </div>
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="ADZAP"> ADZAP</label>
+                            </div>
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="Corporate Walk"> Corporate Walk</label>
+                            </div>
+                            <div class="option-item">
+                                <label><input type="checkbox" name="selected_events[]" value="MBA Treasure Hunt"> Treasure Hunt</label>
+                            </div>
+                            
+                        </div>
+                    </div>
                 <div class="form-action dual-action">
                     <button id="back-to-personal" class="secondary-btn">
                         <i class="fas fa-arrow-left"></i>
@@ -258,7 +381,7 @@
                         <i class="fas fa-arrow-right"></i>
                     </button>
                 </div>
-            </div>
+            </div> 
             
             <!-- Payment Section -->
             <div id="payment-section" class="form-section hidden">

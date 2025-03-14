@@ -20,7 +20,8 @@
   
   * {
     margin: 0;
-    padding: 0;
+    padding: 2px;
+    padding-top: 5px;
     box-sizing: border-box;
     font-family: 'Poppins', sans-serif;
   }
@@ -448,8 +449,30 @@ select {
     font-style: italic;
     transition: var(--transition);
   }
+  .dropdown-container {
+    position: relative;
+    width: 100%;
+    margin-top: 5px;
+  }
+  .dropdown-menu {
+    text-size-adjust: 100%;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background-color: var(--white);
+    border: 2px solid var(--gray-light);
+    border-radius: var(--border-radius);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 10;
+    display: none;
+
+  }
+  /*_________________________________________________________________________________________*/
   
-  /* Event List Styles */
+  /* Event List Styles
   .event-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -477,6 +500,8 @@ select {
     background-color: rgba(67, 97, 238, 0.05);
     box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
   }
+  
+  _________________________________________________________________________________________*/
   
   /* Payment Options Styles */
   .payment-options {
@@ -1070,22 +1095,21 @@ select {
   }
 
   /* Event Card Styles */
-  .event-card {
+  
+ /* .event-card{
     background-color: var(--white);
     border: 2px solid var(--gray-light);
     border-radius: var(--border-radius);
     padding: 20px;
     display: flex;
+    flex-direction: row;
+    justify-content: space-between;
     align-items: center;
     gap: 15px;
     transition: var(--transition);
     cursor: pointer;
-  }
-  .event{
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background-color: #f1f1f1;
+    height: fit-content;
+
   }
 
   .event-card:hover {
@@ -1117,6 +1141,8 @@ select {
 
   .event-select input[type="checkbox"] {
     display: none;
+    
+    
   }
 
   .event-select label {
@@ -1127,8 +1153,7 @@ select {
     cursor: pointer;
     transition: var(--transition);
     display: flex;
-    align-items: center;
-    justify-content: center;
+    align-content: flex-end;
   }
 
   .event-select input[type="checkbox"]:checked + label {
@@ -1139,6 +1164,7 @@ select {
 
   .event-select label i {
     font-size: 12px;
+    padding-left: 50%;
     opacity: 0;
     transition: var(--transition);
   }
@@ -1146,7 +1172,7 @@ select {
   .event-select input[type="checkbox"]:checked + label i {
     opacity: 1;
   }
-
+*/
   /* Confetti Animation */
   .confetti {
     position: absolute;
