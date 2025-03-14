@@ -8,11 +8,13 @@ from email.mime.image import MIMEImage
 from pymongo import MongoClient
 import random
 import os
+os.makedirs("qrcodes", exist_ok=True)
+
 
 app = FastAPI()
 
 # MongoDB Connection
-MONGO_URI = "mongodb+srv://infest2k25:infest2k25india@infest-2k25.3mv5l.mongodb.net/?retryWrites=true&w=majority&appName=INFEST-2K25"
+MONGO_URI = "mongodb+srv://infest2k25:infest2k25test@infest-2k25.3mv5l.mongodb.net/?retryWrites=true&w=majority&appName=INFEST-2K25"
 client = MongoClient(MONGO_URI)
 db = client["infest_db"]
 collection = db["registrations"]
@@ -92,7 +94,11 @@ async def register_user(data: RegistrationData):
     user_data = data.dict()
     user_data["ticket_id"] = ticket_id
 
-    collection.insert_one(user_data)
+    try:
+       collection.insert_one(user_data)
+    except Exception as e:
+       raise HTTPException(status_code=500, detail=f"Database Error: {str(e)}")
+
 
     email_sent = send_email(data.email, ticket_id, qr_path, user_data)
 
