@@ -68,7 +68,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Function to initialize Razorpay payment
     function initializeRazorpay(userData, orderId) {
         const options = {
-            key: "rzp_test_YOUR_KEY_HERE", // Replace with your Razorpay key
+            key: "rzp_test_0DbywO9fUpbt3w", // Replace with your Razorpay key
             amount: 25000, // Amount in paise (250 INR)
             currency: "INR",
             name: "INFEST 2K25",
@@ -86,7 +86,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 contact: userData.phone
             },
             notes: {
-                address: "Institute of Innovation and Engineering"
+                address: "INFO Institute of Engineering, Coimbatore"
             },
             theme: {
                 color: "#3399cc"
