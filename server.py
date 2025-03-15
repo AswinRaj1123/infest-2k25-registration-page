@@ -35,8 +35,8 @@ EMAIL_USER = (os.getenv("EMAIL_USER"))
 EMAIL_PASS = (os.getenv("EMAIL_PASS"))
 
 # Initialize Razorpay client - Replace with your actual keys
-RAZORPAY_KEY_ID = "rzp_test_YOUR_KEY_HERE"
-RAZORPAY_KEY_SECRET = "YOUR_SECRET_KEY_HERE"
+RAZORPAY_KEY_ID = "rzp_test_0DbywO9fUpbt3w"
+RAZORPAY_KEY_SECRET = "k6nxnZ8jQ7YTaKwML14xquSq"
 razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
 # Pydantic Model for Validation
