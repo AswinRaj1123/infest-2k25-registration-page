@@ -8,20 +8,36 @@ from email.mime.image import MIMEImage
 from pymongo import MongoClient
 import random
 import os
+from dotenv import load_dotenv
+import razorpay
+from datetime import datetime
+from fastapi.middleware.cors import CORSMiddleware
 os.makedirs("qrcodes", exist_ok=True)
 
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins (Change to specific origins for security)
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
+)
 
 # MongoDB Connection
-MONGO_URI = "mongodb+srv://infest2k25:infest2k25test@infest-2k25.3mv5l.mongodb.net/?retryWrites=true&w=majority&appName=INFEST-2K25"
+MONGO_URI = (os.getenv("MONGO_URI"))
 client = MongoClient(MONGO_URI)
 db = client["infest_db"]
 collection = db["registrations"]
 
 # Email Configuration
-EMAIL_USER = "infest2k25@gmail.com"
-EMAIL_PASS = "rmac uddi oxbj qaxa"
+EMAIL_USER = (os.getenv("EMAIL_USER"))
+EMAIL_PASS = (os.getenv("EMAIL_PASS"))
+
+# Initialize Razorpay client - Replace with your actual keys
+RAZORPAY_KEY_ID = "rzp_test_YOUR_KEY_HERE"
+RAZORPAY_KEY_SECRET = "YOUR_SECRET_KEY_HERE"
+razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
 # Pydantic Model for Validation
 class RegistrationData(BaseModel):
@@ -34,6 +50,18 @@ class RegistrationData(BaseModel):
     department: str
     events: list
     payment_mode: str
+    project_link: str = None
+    payment_id: str = None
+    payment_status: str = "pending"
+
+class OrderRequest(BaseModel):
+    amount: int
+
+class PaymentVerification(BaseModel):
+    razorpay_order_id: str
+    razorpay_payment_id: str
+    razorpay_signature: str
+    registration_data: dict
 
 # Function to Generate Ticket ID
 def generate_ticket_id():
@@ -84,32 +112,131 @@ def send_email(user_email, ticket_id, qr_path, user_data):
     except Exception as e:
         print("Email Error:", e)
         return False
-
-# API to Handle Registration
-@app.post("/register")
-async def register_user(data: RegistrationData):
-    ticket_id = generate_ticket_id()
-    qr_path = generate_qr(ticket_id)
-
-    user_data = data.dict()
-    user_data["ticket_id"] = ticket_id
-
+# API to Create Razorpay Order
+@app.post("/create-order")
+async def create_order(order_req: OrderRequest):
     try:
-       collection.insert_one(user_data)
+        amount_in_paise = order_req.amount * 100  # Convert to paise (250 INR = 25000 paise)
+        
+        order_data = {
+            'amount': amount_in_paise,
+            'currency': 'INR',
+            'receipt': f'receipt_{datetime.now().timestamp()}',
+            'notes': {
+                'event': 'INFEST 2K25 Registration'
+            }
+        }
+        
+        order = razorpay_client.order.create(data=order_data)
+        
+        return {"status": "success", "order_id": order['id']}
     except Exception as e:
-       raise HTTPException(status_code=500, detail=f"Database Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Razorpay Error: {str(e)}")
+
+# API to Verify Payment
+@app.post("/verify-payment")
+async def verify_payment(payment_data: PaymentVerification):
+    try:
+        # Build the parameters dict to verify signature
+        params_dict = {
+            'razorpay_order_id': payment_data.razorpay_order_id,
+            'razorpay_payment_id': payment_data.razorpay_payment_id,
+            'razorpay_signature': payment_data.razorpay_signature
+        }
+        
+        # Verify signature
+        razorpay_client.utility.verify_payment_signature(params_dict)
+        
+        # If verification successful, update registration data and save
+        registration_data = payment_data.registration_data
+        registration_data['payment_id'] = payment_data.razorpay_payment_id
+        registration_data['payment_status'] = "paid"
+        registration_data['payment_time'] = datetime.now().isoformat()
+        registration_data['payment_order_id'] = payment_data.razorpay_order_id
+        
+        # Generate ticket ID
+        ticket_id = generate_ticket_id()
+        registration_data['ticket_id'] = ticket_id
+        
+        # Save registration data
+        collection.insert_one(registration_data)
+        
+        # Generate QR Code
+        qr_path = generate_qr(ticket_id)
+        
+        # Send email notification
+        email_sent = send_email(registration_data['email'], ticket_id, qr_path, registration_data)
+        
+        return {
+            "status": "success", 
+            "ticket_id": ticket_id, 
+            "payment_status": "paid",
+            "email_sent": email_sent
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Payment verification failed: {str(e)}")
 
 
-    email_sent = send_email(data.email, ticket_id, qr_path, user_data)
+# API to Create Razorpay Order
+@app.post("/create-order")
+async def create_order(order_req: OrderRequest):
+    try:
+        amount_in_paise = order_req.amount * 100  # Convert to paise (250 INR = 25000 paise)
+        
+        order_data = {
+            'amount': amount_in_paise,
+            'currency': 'INR',
+            'receipt': f'receipt_{datetime.now().timestamp()}',
+            'notes': {
+                'event': 'INFEST 2K25 Registration'
+            }
+        }
+        
+        order = razorpay_client.order.create(data=order_data)
+        
+        return {"status": "success", "order_id": order['id']}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Razorpay Error: {str(e)}")
 
-    return {"status": "success", "ticket_id": ticket_id, "qr_code": qr_path, "email_sent": email_sent}
-
-from fastapi.middleware.cors import CORSMiddleware
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins (Change to specific origins for security)
-    allow_credentials=True,
-    allow_methods=["*"],  # Allow all HTTP methods
-    allow_headers=["*"],  # Allow all headers
-)
+# API to Verify Payment
+@app.post("/verify-payment")
+async def verify_payment(payment_data: PaymentVerification):
+    try:
+        # Build the parameters dict to verify signature
+        params_dict = {
+            'razorpay_order_id': payment_data.razorpay_order_id,
+            'razorpay_payment_id': payment_data.razorpay_payment_id,
+            'razorpay_signature': payment_data.razorpay_signature
+        }
+        
+        # Verify signature
+        razorpay_client.utility.verify_payment_signature(params_dict)
+        
+        # If verification successful, update registration data and save
+        registration_data = payment_data.registration_data
+        registration_data['payment_id'] = payment_data.razorpay_payment_id
+        registration_data['payment_status'] = "paid"
+        registration_data['payment_time'] = datetime.now().isoformat()
+        registration_data['payment_order_id'] = payment_data.razorpay_order_id
+        
+        # Generate ticket ID
+        ticket_id = generate_ticket_id()
+        registration_data['ticket_id'] = ticket_id
+        
+        # Save registration data
+        collection.insert_one(registration_data)
+        
+        # Generate QR Code
+        qr_path = generate_qr(ticket_id)
+        
+        # Send email notification
+        email_sent = send_email(registration_data['email'], ticket_id, qr_path, registration_data)
+        
+        return {
+            "status": "success", 
+            "ticket_id": ticket_id, 
+            "payment_status": "paid",
+            "email_sent": email_sent
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Payment verification failed: {str(e)}")
