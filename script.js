@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const ticketPaymentStatus = document.getElementById("ticket-payment-status");
     let currentStep = 0;
     let paymentId = null;
-    let orderId = null;
+    let orderId = null;   
     let registrationData = null;
 
     // ✅ Function to update form steps and progress bar
@@ -64,11 +64,26 @@ document.addEventListener("DOMContentLoaded", function () {
             updateStep(currentStep);
         }
     });
+    submitButton.addEventListener('click', function(event) {
+        const button = event.target;
+
+        // Disable the button
+        button.disabled = true;
+
+        // Change button text to indicate waiting
+        button.textContent = "Please wait...";
+
+        // Re-enable the button after 10 seconds
+        setTimeout(() => {
+            button.disabled = false;
+            button.textContent = "Finish Registration";
+        }, 10000);
+    });
 
     // Function to initialize Razorpay payment
     function initializeRazorpay(userData, orderId) {
         const options = {
-            key: "rzp_test_YOUR_KEY_HERE", // Replace with your Razorpay key
+            key: "rzp_test_0DbywO9fUpbt3w", // Replace with your Razorpay key
             amount: 25000, // Amount in paise (250 INR)
             currency: "INR",
             name: "INFEST 2K25",
@@ -152,11 +167,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 registrationIDElement.textContent = result.ticket_id;
 
                 // Generate QR Code
+                ticketQRCode.innerHTML = '';
+                if (ticketQRCode.childElementCount === 0){
                 new QRCode(ticketQRCode, {
                     text: result.ticket_id,
                     width: 160,
                     height: 160
                 });
+            }
 
                 // Update payment status display
                 if (userData.payment_status === "paid") {
@@ -193,6 +211,8 @@ document.addEventListener("DOMContentLoaded", function () {
     // ✅ Form Submission
     submitButton.addEventListener("click", async function (event) {
         event.preventDefault();
+        button.disabled = true;
+        button.textContent = "Please Wait...";
 
         // Get form values
         const name = document.getElementById("name").value;
