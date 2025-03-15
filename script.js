@@ -101,7 +101,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 contact: userData.phone
             },
             notes: {
-                address: "Institute of Innovation and Engineering"
+                address: "INFO Institute of Engineering, Coimbatore"
             },
             theme: {
                 color: "#3399cc"
