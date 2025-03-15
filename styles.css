@@ -674,7 +674,7 @@ select {
     position: absolute;
     top: 20px;
     left: 35px;
-    transform: rotate(45deg);
+    transform: rotate(-45deg);
     border-right: 5px solid var(--success-color);
     border-top: 5px solid var(--success-color);
     opacity: 0;
