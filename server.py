@@ -16,7 +16,6 @@ from fastapi import Request
 load_dotenv()
 os.makedirs("qrcodes", exist_ok=True)
 
-
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -84,7 +83,7 @@ def send_email(user_email, ticket_id, qr_path, user_data):
     msg["To"] = user_email
     msg["Subject"] = "INFEST 2K25 - Registration Confirmation"
 
- # Determine payment status
+    # Determine payment status
     payment_status = "Paid" if user_data.get('payment_status') == "paid" else "Payment Pending"
     payment_info = "Payment completed successfully" if payment_status == "Paid" else "Please complete your payment at the venue"
 
@@ -122,13 +121,13 @@ def send_email(user_email, ticket_id, qr_path, user_data):
 @app.post("/create-order")
 async def create_order(data: dict):
     amount = data["amount"]  # Amount in paise (₹500 = 50000)
-    order = client.order.create({
+    order = razorpay_client.order.create({
         "amount": amount,
         "currency": "INR",
         "payment_capture": 1  # Auto-captures payment
     })
     return {"order_id": order["id"]}
-        
+
 # API to Verify Payment
 @app.post("/verify-payment")
 async def verify_payment(payment_data: PaymentVerification):
@@ -261,4 +260,3 @@ async def razorpay_webhook(webhook_data: dict):
         print(f"Webhook Error: {e}")
         # We return 200 even for errors to acknowledge receipt
         return {"status": "error", "detail": str(e)}
-    
