@@ -297,3 +297,68 @@ document.addEventListener("DOMContentLoaded", function () {
     // ✅ Initialize Step 1
     updateStep(currentStep);
 });
+
+submitButton.addEventListener("click", async function (event) {
+    event.preventDefault();
+
+    // Disable the submit button to prevent multiple submissions
+    submitButton.disabled = true;
+
+    // Get form values
+    const name = document.getElementById("name").value;
+    const email = document.getElementById("email").value;
+    const phone = document.getElementById("phone").value;
+    const whatsapp = document.getElementById("whatsapp").value;
+    const college = document.getElementById("college").value;
+    const year = document.getElementById("year").value;
+    const department = document.getElementById("department").value;
+    const payment_mode = document.querySelector("input[name='payment-mode']:checked").value;
+
+    // Get selected events
+    const selectedEvents = [];
+    document.querySelectorAll("input[name='selected_events[]']:checked").forEach(event => {
+        selectedEvents.push(event.value);
+    });
+
+    // Prepare data object
+    const userData = {
+        name, email, phone, whatsapp, college, year, department,
+        events: selectedEvents, payment_mode
+    };
+
+    try {
+        const response = await fetch("http://localhost:8000/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(userData)
+        });
+
+        const result = await response.json();
+
+        if (result.status === "success") {
+            // Hide form & show confirmation
+            registrationForm.classList.add("hidden");
+            successContainer.classList.remove("hidden");
+
+            // Display Ticket ID
+            registrationIDElement.textContent = result.ticket_id;
+
+            // Generate QR Code
+            new QRCode(ticketQRCode, {
+                text: result.ticket_id,
+                width: 160,
+                height: 160
+            });
+
+            alert("Registration Successful! Check your email.");
+        } else {
+            alert("Error: Could not process registration.");
+        }
+    } catch (error) {
+        console.error("Registration Error:", error);
+        alert("An error occurred. Please try again.");
+    } finally {
+        // Re-enable the button in case of error
+        submitButton.disabled = false;
+    }
+});
