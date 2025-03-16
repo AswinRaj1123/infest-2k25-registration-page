@@ -1,75 +1,177 @@
 document.addEventListener("DOMContentLoaded", function () {
+    const steps = document.querySelectorAll(".step");
+    const formSections = document.querySelectorAll(".form-section");
+    const nextStepBtn = document.getElementById("next-step-btn");
+    const nextToPaymentBtn = document.getElementById("next-to-payment");
+    const backToPersonalBtn = document.getElementById("back-to-personal");
+    const backToEventsBtn = document.getElementById("back-to-events");
     const submitButton = document.getElementById("submit-registration");
     const successContainer = document.getElementById("success-container");
     const registrationForm = document.getElementById("registration-form");
     const registrationIDElement = document.getElementById("registration-id");
+    const copyIDButton = document.getElementById("copy-id");
     const ticketQRCode = document.getElementById("qrcode");
-    const offlineMessage = document.getElementById("offline-message");
+    const categoryBtns = document.querySelectorAll(".category-btn");
+    const eventCards = document.querySelectorAll(".event-card");
+    let currentStep = 0;
 
-    async function handleRazorpayPayment(userData, ticket_id) {
-        try {
-            const orderResponse = await fetch("https://infest-2k25-registration-page.onrender.com/create-order", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ amount: 25000 }) // ₹500 in paise
-            });
+    // ✅ Function to update form steps and progress bar
+    function updateStep(step) {
+        formSections.forEach((section, index) => {
+            section.classList.toggle("hidden", index !== step);
+        });
 
-            const orderData = await orderResponse.json();
-            if (!orderData.order_id) {
-                alert("Error creating order. Try again.");
-                return;
-            }
-
-            const options = {
-                key: "rzp_test_0DbywO9fUpbt3w",  // ✅ Replace with your actual Razorpay key
-                amount: 25000,
-                currency: "INR",
-                name: "INFEST 2K25",
-                description: "Event Registration Fee",
-                order_id: orderData.order_id,
-                handler: async function (response) {
-                    alert("Payment successful! Payment ID: " + response.razorpay_payment_id);
-
-                    // ✅ Confirm payment with backend
-                    const confirmResponse = await fetch("https://infest-2k25-registration-page.onrender.com/confirm-payment", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            ticket_id: ticket_id,
-                            payment_id: response.razorpay_payment_id,
-                            payment_status: "success"
-                        })
-                    });
-
-                    const confirmResult = await confirmResponse.json();
-                    if (confirmResult.status === "success") {
-                        alert("Payment confirmed! Fetching your ticket details...");
-                        fetchParticipantDetails(ticket_id);
-                    } else {
-                        alert("Payment confirmation failed. Contact support.");
-                    }
-                },
-                prefill: {
-                    name: userData.name,
-                    email: userData.email,
-                    contact: userData.phone,
-                },
-                theme: { color: "#3399cc" },
-            };
-
-            const rzp = new Razorpay(options);
-            rzp.open();
-        } catch (error) {
-            console.error("Error in payment:", error);
-            alert("Payment failed. Try again.");
-        }
+        steps.forEach((stepElement, index) => {
+            stepElement.classList.toggle("active", index === step);
+            stepElement.classList.toggle("completed", index < step);
+        });
     }
 
+    // ✅ Validate form fields for personal info section
+    function validatePersonalInfo() {
+        const name = document.getElementById("name").value.trim();
+        const email = document.getElementById("email").value.trim();
+        const phone = document.getElementById("phone").value.trim();
+        const whatsapp = document.getElementById("whatsapp").value.trim();
+        const college = document.getElementById("college").value.trim();
+        const year = document.getElementById("year").value;
+        const department = document.getElementById("department").value;
+
+        if (!name) {
+            alert("Please enter your full name.");
+            return false;
+        }
+        if (!email || !validateEmail(email)) {
+            alert("Please enter a valid email address.");
+            return false;
+        }
+        if (!phone || !validatePhone(phone)) {
+            alert("Please enter a valid phone number.");
+            return false;
+        }
+        if (!whatsapp || !validatePhone(whatsapp)) {
+            alert("Please enter a valid WhatsApp number.");
+            return false;
+        }
+        if (!college) {
+            alert("Please enter your college name.");
+            return false;
+        }
+        if (!year) {
+            alert("Please select your year of study.");
+            return false;
+        }
+        if (!department) {
+            alert("Please select your department.");
+            return false;
+        }
+        return true;
+    }
+
+    // ✅ Validate email format
+    function validateEmail(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+    }
+
+    // ✅ Validate phone number format
+    function validatePhone(phone) {
+        const re = /^\d{10}$/;
+        return re.test(phone);
+    }
+
+    // ✅ Validate event selection
+    function validateEventSelection() {
+        const selectedEvents = document.querySelectorAll("input[name='selected_events[]']:checked");
+        if (selectedEvents.length === 0) {
+            alert("Please select at least two event.");
+            return false;
+        }
+        return true;
+    }
+
+    // ✅ Validate payment section
+    function validatePayment() {
+        const paymentMethod = document.querySelector("input[name='payment-mode']:checked");
+        if (!paymentMethod) {
+            alert("Please select a payment method.");
+            return false;
+        }
+        return true;
+    }
+
+    // ✅ Event Listener for Next Step Button
+    nextStepBtn.addEventListener("click", function (event) {
+        event.preventDefault();
+        if (validatePersonalInfo()) {
+            if (currentStep < formSections.length - 1) {
+                currentStep++;
+                updateStep(currentStep);
+            }
+        }
+    });
+
+    // ✅ Event Listener for Next to Payment Button
+    nextToPaymentBtn.addEventListener("click", function (event) {
+        event.preventDefault();
+        if (validateEventSelection()) {
+            if (currentStep < formSections.length - 1) {
+                currentStep++;
+                updateStep(currentStep);
+            }
+        }
+    });
+
+    // ✅ Event Listener for Back to Personal Button
+    backToPersonalBtn.addEventListener("click", function (event) {
+        event.preventDefault();
+        if (currentStep > 0) {
+            currentStep--;
+            updateStep(currentStep);
+        }
+    });
+
+    // ✅ Event Listener for Back to Events Button
+    backToEventsBtn.addEventListener("click", function (event) {
+        event.preventDefault();
+        if (currentStep > 0) {
+            currentStep--;
+            updateStep(currentStep);
+        }
+    });
+
+    // ✅ Event category filtering
+    categoryBtns.forEach(btn => {
+        btn.addEventListener("click", function() {
+            // Remove active class from all buttons
+            categoryBtns.forEach(button => button.classList.remove("active"));
+            
+            // Add active class to clicked button
+            this.classList.add("active");
+            
+            // Get selected category
+            const selectedCategory = this.getAttribute("data-category");
+            
+            // Show/hide event cards based on category
+            eventCards.forEach(card => {
+                if (selectedCategory === "all" || card.getAttribute("data-category") === selectedCategory) {
+                    card.style.display = "flex";
+                } else {
+                    card.style.display = "none";
+                }
+            });
+        });
+    });
+
+    // ✅ Form Submission - Sends data to backend (MongoDB)
     submitButton.addEventListener("click", async function (event) {
         event.preventDefault();
-        submitButton.textContent = "Please Wait...";
-        submitButton.disabled = true;
 
+        if (!validatePayment()) {
+            return;
+        }
+
+        // Get form values
         const name = document.getElementById("name").value;
         const email = document.getElementById("email").value;
         const phone = document.getElementById("phone").value;
@@ -77,90 +179,208 @@ document.addEventListener("DOMContentLoaded", function () {
         const college = document.getElementById("college").value;
         const year = document.getElementById("year").value;
         const department = document.getElementById("department").value;
+        const projectLink = document.getElementById("project-link").value;
         const payment_mode = document.querySelector("input[name='payment-mode']:checked").value;
 
+        // Get selected events
         const selectedEvents = [];
         document.querySelectorAll("input[name='selected_events[]']:checked").forEach(event => {
             selectedEvents.push(event.value);
         });
 
+        // Prepare data object
         const userData = {
-            name, email, phone, whatsapp, college, year, department,
-            events: selectedEvents, payment_mode
+            name, 
+            email, 
+            phone, 
+            whatsapp, 
+            college, 
+            year, 
+            department,
+            project_link: projectLink,
+            events: selectedEvents, 
+            payment_mode
         };
 
         try {
-            const response = await fetch("https://infest-2k25-registration-page.onrender.com/register", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(userData)
-            });
+            // If online payment selected, initiate Razorpay
+            if (payment_mode === "online") {
+                // Calculate amount based on number of events
+                const eventCount = selectedEvents.length;
+                const basePrice = 250; // Base price per event
+                const amount = basePrice * eventCount;
 
-            const result = await response.json();
-
-            if (result.status === "success") {
-                const ticket_id = result.ticket_id;
-
-                if (payment_mode === "offline") {
-                    registrationForm.classList.add("hidden");
-                    successContainer.classList.remove("hidden");
-                    registrationIDElement.textContent = ticket_id;
-
-                    new QRCode(ticketQRCode, {
-                        text: ticket_id,
-                        width: 160,
-                        height: 160
+                // First create registration record in database
+                const regResponse = await fetch("https://infest-2k25-registration-page.onrender.com/create_registration", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(userData)
+                });
+                
+                const regResult = await regResponse.json();
+                
+                if (regResult.status === "success") {
+                    // Get order details for Razorpay
+                    const orderResponse = await fetch("https://infest-2k25-registration-page.onrender.com/create_order", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            amount: amount * 250, // Amount in paise
+                            ticket_id: regResult.ticket_id
+                        })
                     });
-
-                    offlineMessage.classList.remove("hidden");
-                    alert("Registration Successful! Please pay at the venue.");
-                } else if (payment_mode === "online") {
-                    handleRazorpayPayment(userData, ticket_id);
+                    
+                    const orderResult = await orderResponse.json();
+                    
+                    if (orderResult.status === "success") {
+                        // Initialize Razorpay
+                        const options = {
+                            key: "rzp_test_0DbywO9fUpbt3w", // Replace with your actual test key
+                            amount: amount * 250, // Amount in paise
+                            currency: "INR",
+                            name: "INFEST 2K25",
+                            description: "Event Registration Fee",
+                            order_id: orderResult.order_id,
+                            handler: async function(response) {
+                                // Verify payment
+                                const verifyResponse = await fetch("https://infest-2k25-registration-page.onrender.com/verify_payment", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                        razorpay_payment_id: response.razorpay_payment_id,
+                                        razorpay_order_id: response.razorpay_order_id,
+                                        razorpay_signature: response.razorpay_signature,
+                                        ticket_id: regResult.ticket_id
+                                    })
+                                });
+                                
+                                const verifyResult = await verifyResponse.json();
+                                
+                                if (verifyResult.status === "success") {
+                                    // Hide form & show confirmation
+                                    registrationForm.classList.add("hidden");
+                                    successContainer.classList.remove("hidden");
+                                    
+                                    // Update ticket payment status
+                                    const paymentStatus = document.getElementById("ticket-payment-status");
+                                    paymentStatus.classList.remove("pending");
+                                    paymentStatus.classList.add("completed");
+                                    paymentStatus.querySelector(".status-text").textContent = "Payment Completed";
+                                    
+                                    // Display Ticket info
+                                    displayTicketInfo(regResult.ticket_id, name, email, selectedEvents, department);
+                                    
+                                    alert("Registration and Payment Successful! Check your email.");
+                                } else {
+                                    alert("Payment verification failed. Please contact support.");
+                                }
+                            },
+                            prefill: {
+                                name: name,
+                                email: email,
+                                contact: phone
+                            },
+                            theme: {
+                                color: "#6c63ff"
+                            }
+                        };
+                        
+                        const paymentObject = new Razorpay(options);
+                        paymentObject.open();
+                    } else {
+                        alert("Error: Could not create payment order.");
+                    }
+                } else {
+                    alert("Error: Could not process registration.");
                 }
             } else {
-                alert("Error: Could not process registration.");
+                // For offline payment
+                const response = await fetch("https://infest-2k25-registration-page.onrender.com/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(userData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === "success") {
+                    // Hide form & show confirmation
+                    registrationForm.classList.add("hidden");
+                    successContainer.classList.remove("hidden");
+                    
+                    // Make offline payment message visible
+                    document.getElementById("offline-message").style.display = "block";
+                    
+                    // Display Ticket info
+                    displayTicketInfo(result.ticket_id, name, email, selectedEvents, department);
+                    
+                    alert("Registration Successful! Check your email.");
+                } else {
+                    alert("Error: Could not process registration.");
+                }
             }
         } catch (error) {
             console.error("Registration Error:", error);
             alert("An error occurred. Please try again.");
-        } finally {
-            submitButton.textContent = "Complete Registration";
-            submitButton.disabled = false;
         }
     });
 
-    async function fetchParticipantDetails(ticket_id) {
-        try {
-            const response = await fetch(`https://infest-2k25-registration-page.onrender.com/participant/${ticket_id}`);
-            const data = await response.json();
-
-            if (data.status === "success") {
-                const participant = data.participant;
-                registrationIDElement.textContent = participant.ticket_id;
-
-                if (participant.payment_status === "paid") {
-                    offlineMessage.classList.add("hidden");
-                    document.getElementById("payment-status").innerHTML = 
-                        '<span class="status-paid"><i class="fas fa-check-circle"></i> Paid</span>';
-                } else {
-                    document.getElementById("payment-status").innerHTML = 
-                        '<span class="status-pending"><i class="fas fa-clock"></i> Payment Pending</span>';
-                }
-
-                registrationForm.classList.add("hidden");
-                successContainer.classList.remove("hidden");
-
-                new QRCode(ticketQRCode, {
-                    text: participant.ticket_id,
-                    width: 160,
-                    height: 160
-                });
-            } else {
-                alert("Error fetching participant details. Please contact support.");
-            }
-        } catch (error) {
-            console.error("Error fetching participant:", error);
-            alert("An error occurred while fetching participant details.");
-        }
+    // ✅ Display ticket information
+    function displayTicketInfo(ticketId, name, email, events, department) {
+        // Display Ticket ID
+        registrationIDElement.textContent = ticketId;
+        
+        // Update ticket details
+        document.getElementById("ticket-name").textContent = name;
+        document.getElementById("ticket-email").textContent = email;
+        document.getElementById("ticket-events").textContent = events.join(", ");
+        document.getElementById("ticket-department").textContent = document.getElementById("department").options[document.getElementById("department").selectedIndex].text;
+        
+        // Generate QR Code
+        new QRCode(ticketQRCode, {
+            text: ticketId,
+            width: 160,
+            height: 160
+        });
     }
+
+    // ✅ Copy Registration ID to Clipboard
+    copyIDButton.addEventListener("click", function () {
+        navigator.clipboard.writeText(registrationIDElement.textContent)
+            .then(() => alert("Registration ID copied!"))
+            .catch(err => console.error("Failed to copy ID:", err));
+    });
+
+    // ✅ Limit Event Selection to 3
+    document.querySelectorAll("input[name='selected_events[]']").forEach(checkbox => {
+        checkbox.addEventListener("change", function () {
+            const checkedBoxes = document.querySelectorAll("input[name='selected_events[]']:checked");
+            if (checkedBoxes.length > 3) {
+                this.checked = false;
+                alert("You can only select up to 3 events.");
+            }
+        });
+    });
+
+    // ✅ Download ticket functionality
+    document.getElementById("download-ticket").addEventListener("click", function() {
+        alert("Ticket download feature will be available soon!");
+    });
+
+    // ✅ Share ticket functionality
+    document.getElementById("share-ticket").addEventListener("click", function() {
+        if (navigator.share) {
+            navigator.share({
+                title: 'My INFEST 2K25 Ticket',
+                text: `I've registered for INFEST 2K25! My ticket ID is ${registrationIDElement.textContent}`,
+                url: window.location.href,
+            })
+            .catch((error) => console.log('Error sharing', error));
+        } else {
+            alert("Sharing is not supported on this browser");
+        }
+    });
+
+    // ✅ Initialize Step 1
+    updateStep(currentStep);
 });
