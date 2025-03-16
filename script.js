@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const ticketPaymentStatus = document.getElementById("ticket-payment-status");
     let currentStep = 0;
     let paymentId = null;
-    let orderId = null;   
+    let orderId = null;
     let registrationData = null;
 
     // ✅ Function to update form steps and progress bar
@@ -27,19 +27,6 @@ document.addEventListener("DOMContentLoaded", function () {
             stepElement.classList.toggle("active", index === step);
             stepElement.classList.toggle("completed", index < step);
         });
-        window.scrollTo(0, 0);
-    
-        // Then, if needed, scroll to the specific section
-        if (formSections[step]) {
-            // You can adjust this timeout if needed
-            setTimeout(() => {
-                // Force scroll to top of the window
-                window.scrollTo({
-                    top: 0,
-                    behavior: 'smooth'
-                });
-            }, 10);
-        }
     }
 
     // ✅ Event Listener for Next Step Button
@@ -47,7 +34,7 @@ document.addEventListener("DOMContentLoaded", function () {
         event.preventDefault();
         if (currentStep < formSections.length - 1) {
             currentStep++;
-            updateStep(currentStep);     
+            updateStep(currentStep);
         }
     });
 
@@ -76,21 +63,6 @@ document.addEventListener("DOMContentLoaded", function () {
             currentStep--;
             updateStep(currentStep);
         }
-    });
-    submitButton.addEventListener('click', function(event) {
-        const button = event.target;
-
-        // Disable the button
-        button.disabled = true;
-
-        // Change button text to indicate waiting
-        button.textContent = "Please wait...";
-
-        // Re-enable the button after 10 seconds
-        setTimeout(() => {
-            button.disabled = false;
-            button.textContent = "Finish Registration";
-        }, 10000);
     });
 
     // Function to initialize Razorpay payment
@@ -180,14 +152,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 registrationIDElement.textContent = result.ticket_id;
 
                 // Generate QR Code
-                ticketQRCode.innerHTML = '';
-                if (ticketQRCode.childElementCount === 0){
                 new QRCode(ticketQRCode, {
                     text: result.ticket_id,
                     width: 160,
                     height: 160
                 });
-            }
 
                 // Update payment status display
                 if (userData.payment_status === "paid") {
@@ -224,8 +193,6 @@ document.addEventListener("DOMContentLoaded", function () {
     // ✅ Form Submission
     submitButton.addEventListener("click", async function (event) {
         event.preventDefault();
-        button.disabled = true;
-        button.textContent = "Please Wait...";
 
         // Get form values
         const name = document.getElementById("name").value;
@@ -296,69 +263,4 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // ✅ Initialize Step 1
     updateStep(currentStep);
-});
-
-submitButton.addEventListener("click", async function (event) {
-    event.preventDefault();
-
-    // Disable the submit button to prevent multiple submissions
-    submitButton.disabled = true;
-
-    // Get form values
-    const name = document.getElementById("name").value;
-    const email = document.getElementById("email").value;
-    const phone = document.getElementById("phone").value;
-    const whatsapp = document.getElementById("whatsapp").value;
-    const college = document.getElementById("college").value;
-    const year = document.getElementById("year").value;
-    const department = document.getElementById("department").value;
-    const payment_mode = document.querySelector("input[name='payment-mode']:checked").value;
-
-    // Get selected events
-    const selectedEvents = [];
-    document.querySelectorAll("input[name='selected_events[]']:checked").forEach(event => {
-        selectedEvents.push(event.value);
-    });
-
-    // Prepare data object
-    const userData = {
-        name, email, phone, whatsapp, college, year, department,
-        events: selectedEvents, payment_mode
-    };
-
-    try {
-        const response = await fetch("http://localhost:8000/register", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(userData)
-        });
-
-        const result = await response.json();
-
-        if (result.status === "success") {
-            // Hide form & show confirmation
-            registrationForm.classList.add("hidden");
-            successContainer.classList.remove("hidden");
-
-            // Display Ticket ID
-            registrationIDElement.textContent = result.ticket_id;
-
-            // Generate QR Code
-            new QRCode(ticketQRCode, {
-                text: result.ticket_id,
-                width: 160,
-                height: 160
-            });
-
-            alert("Registration Successful! Check your email.");
-        } else {
-            alert("Error: Could not process registration.");
-        }
-    } catch (error) {
-        console.error("Registration Error:", error);
-        alert("An error occurred. Please try again.");
-    } finally {
-        // Re-enable the button in case of error
-        submitButton.disabled = false;
-    }
 });
