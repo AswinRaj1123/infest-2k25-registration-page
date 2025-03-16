@@ -24,20 +24,6 @@ document.addEventListener("DOMContentLoaded", function () {
             stepElement.classList.toggle("active", index === step);
             stepElement.classList.toggle("completed", index < step);
         });
-        window.scrollTo(0, 0);
-        // Scroll to top of the form
-    
-        // Then, if needed, scroll to the specific section
-        if (formSections[step]) {
-            // You can adjust this timeout if needed
-            setTimeout(() => {
-                // Force scroll to top of the window
-                window.scrollTo({
-                    top: 0,
-                    behavior: 'smooth'
-                });
-            }, 10);
-        }
     }
 
     // ✅ Event Listener for Next Step Button
@@ -75,30 +61,55 @@ document.addEventListener("DOMContentLoaded", function () {
             updateStep(currentStep);
         }
     });
-    document.getElementById("submit-registration").addEventListener('click', function(event) {
-        const button = event.target;
-
-        // Disable the button
-        button.disabled = true;
-
-        // Change button text to indicate waiting
-        button.textContent = "Please wait...";
-        
-    });
 
     // ✅ Function to handle Razorpay payment
-    function handleRazorpayPayment(userData) {
+    function handleRazorpayPayment(userData, ticket_id) {
         const options = {
-            key: "rzp_test_0DbywO9fUpbt3w", // Replace with your Razorpay key
+            key: "YOUR_RAZORPAY_KEY", // Replace with your Razorpay key
             amount: 25000, // Amount in paise (e.g., 50000 = ₹500)
             currency: "INR",
             name: "INFEST 2K25",
             description: "Event Registration Fee",
             image: "infest-2k25 logo.png", // Replace with your logo URL
             order_id: "order_9A33XWu170gUtm", // Replace with your order ID (generated from your backend)
-            handler: function (response) {
+            handler: async function (response) {
+                // Payment successful
                 alert("Payment successful! Payment ID: " + response.razorpay_payment_id);
-                // You can send the payment ID to your backend for verification
+
+                // Send payment confirmation to backend
+                try {
+                    const paymentResponse = await fetch("https://infest-2k25-registration-page.onrender.com/confirm-payment", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            ticket_id: ticket_id,
+                            payment_id: response.razorpay_payment_id,
+                            payment_status: "success"
+                        })
+                    });
+
+                    const paymentResult = await paymentResponse.json();
+                    if (paymentResult.status === "success") {
+                        // Show success message and ticket
+                        registrationForm.classList.add("hidden");
+                        successContainer.classList.remove("hidden");
+                        registrationIDElement.textContent = ticket_id;
+
+                        // Generate QR Code
+                        new QRCode(ticketQRCode, {
+                            text: ticket_id,
+                            width: 160,
+                            height: 160
+                        });
+
+                        alert("Registration and payment successful! Check your email.");
+                    } else {
+                        alert("Payment confirmation failed. Please contact support.");
+                    }
+                } catch (error) {
+                    console.error("Payment Confirmation Error:", error);
+                    alert("An error occurred during payment confirmation.");
+                }
             },
             prefill: {
                 name: userData.name,
@@ -150,30 +161,27 @@ document.addEventListener("DOMContentLoaded", function () {
             const result = await response.json();
 
             if (result.status === "success") {
-                // Hide form & show confirmation
-                registrationForm.classList.add("hidden");
-                successContainer.classList.remove("hidden");
+                const ticket_id = result.ticket_id;
 
-                // Display Ticket ID
-                registrationIDElement.textContent = result.ticket_id;
-
-                // Generate QR Code
-                new QRCode(ticketQRCode, {
-                    text: result.ticket_id,
-                    width: 160,
-                    height: 160
-                });
-
-                // Handle payment mode
                 if (payment_mode === "offline") {
                     // Show offline payment message
+                    registrationForm.classList.add("hidden");
+                    successContainer.classList.remove("hidden");
+                    registrationIDElement.textContent = ticket_id;
+
+                    // Generate QR Code
+                    new QRCode(ticketQRCode, {
+                        text: ticket_id,
+                        width: 160,
+                        height: 160
+                    });
+
                     offlineMessage.classList.remove("hidden");
+                    alert("Registration Successful! Please pay at the venue.");
                 } else if (payment_mode === "online") {
                     // Initiate Razorpay payment
-                    handleRazorpayPayment(userData);
+                    handleRazorpayPayment(userData, ticket_id);
                 }
-
-                alert("Registration Successful! Check your email.");
             } else {
                 alert("Error: Could not process registration.");
             }
