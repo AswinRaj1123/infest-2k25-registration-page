@@ -28,9 +28,20 @@ document.addEventListener("DOMContentLoaded", function () {
             stepElement.classList.toggle("completed", index < step);
         });
         if (formSections[step]) {
-            formSections[step].scrollIntoView({ behavior: 'smooth', block: 'start' });
-            // Alternative approach:
-            // window.scrollTo({ top: formSections[step].offsetTop - 20, behavior: 'smooth' });
+            // Find the header element within the section
+            const sectionHeader = formSections[step].querySelector('h2, h3, .section-title, .form-header');
+            
+            // If a header exists, scroll to it; otherwise, scroll to the section itself
+            const elementToScroll = sectionHeader || formSections[step];
+            
+            // Scroll the element into view at the top of the viewport
+            elementToScroll.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            
+            // Additional fallback if needed
+            window.scrollTo({
+                top: formSections[step].offsetTop - 20, // 20px buffer from the top
+                behavior: 'smooth'
+            });
         }
     }
 
