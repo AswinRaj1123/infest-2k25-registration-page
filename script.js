@@ -27,21 +27,18 @@ document.addEventListener("DOMContentLoaded", function () {
             stepElement.classList.toggle("active", index === step);
             stepElement.classList.toggle("completed", index < step);
         });
+        window.scrollTo(0, 0);
+    
+        // Then, if needed, scroll to the specific section
         if (formSections[step]) {
-            // Find the header element within the section
-            const sectionHeader = formSections[step].querySelector('h2, h3, .section-title, .form-header');
-            
-            // If a header exists, scroll to it; otherwise, scroll to the section itself
-            const elementToScroll = sectionHeader || formSections[step];
-            
-            // Scroll the element into view at the top of the viewport
-            elementToScroll.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            
-            // Additional fallback if needed
-            window.scrollTo({
-                top: formSections[step].offsetTop - 20, // 20px buffer from the top
-                behavior: 'smooth'
-            });
+            // You can adjust this timeout if needed
+            setTimeout(() => {
+                // Force scroll to top of the window
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            }, 10);
         }
     }
 
