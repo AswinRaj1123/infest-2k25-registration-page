@@ -105,7 +105,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Function to create an order on server
     async function createOrder(userData) {
         try {
-            const response = await fetch("http://localhost:8000/create-order", {
+            const response = await fetch("https://infest-2k25-registration-page.onrender.com/create-order", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ amount: 250 })
@@ -135,7 +135,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         try {
-            const response = await fetch("http://localhost:8000/register", {
+            const response = await fetch("https://infest-2k25-registration-page.onrender.com/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(userData)
@@ -193,7 +193,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // ✅ Form Submission
     submitButton.addEventListener("click", async function (event) {
         event.preventDefault();
-
+    
         // Get form values
         const name = document.getElementById("name").value;
         const email = document.getElementById("email").value;
@@ -202,44 +202,86 @@ document.addEventListener("DOMContentLoaded", function () {
         const college = document.getElementById("college").value;
         const year = document.getElementById("year").value;
         const department = document.getElementById("department").value;
-        const paymentMode = document.querySelector("input[name='payment-mode']:checked").value;
-        const projectLink = document.getElementById("project-link").value;
-
+        const payment_mode = document.querySelector("input[name='payment-mode']:checked").value;
+    
         // Get selected events
-        const events = [];
+        const selectedEvents = [];
         document.querySelectorAll("input[name='selected_events[]']:checked").forEach(event => {
-            events.push(event.value);
+            selectedEvents.push(event.value);
         });
-
+    
         // Prepare data object
         const userData = {
             name, email, phone, whatsapp, college, year, department,
-            events, payment_mode: paymentMode, project_link: projectLink
+            events: selectedEvents, payment_mode
         };
-        
-        // Store registration data globally
-        registrationData = userData;
-
-        // Handle different payment methods
-        if (paymentMode === "online") {
-            // Create order ID first
-            orderId = await createOrder(userData);
-            if (orderId) {
-                // Add Razorpay script dynamically if not already loaded
-                if (!window.Razorpay) {
-                    const script = document.createElement("script");
-                    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-                    script.onload = function() {
-                        initializeRazorpay(userData, orderId);
+    
+        try {
+            // Step 1: Register the user
+            const registrationResponse = await fetch("https://infest-2k25-registration-page.onrender.com/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(userData)
+            });
+    
+            const registrationResult = await registrationResponse.json();
+    
+            if (registrationResult.status === "success") {
+                // Step 2: Create Razorpay order
+                const paymentResponse = await fetch("https://infest-2k25-registration-page.onrender.com/create-payment-order", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ amount: 100, currency: "INR" })  // Amount in INR
+                });
+    
+                const paymentResult = await paymentResponse.json();
+    
+                if (paymentResult.status === "success") {
+                    // Step 3: Open Razorpay payment modal
+                    const options = {
+                        key: "your_razorpay_key_id",  // Replace with your Razorpay key ID
+                        amount: 250 * 100,  // Amount in paise
+                        currency: "INR",
+                        order_id: paymentResult.order_id,
+                        name: "INFEST 2K25 Registration",
+                        description: "Payment for INFEST 2K25 registration",
+                        handler: function (response) {
+                            alert("Payment successful! Payment ID: " + response.razorpay_payment_id);
+                            // Hide form & show confirmation
+                            registrationForm.classList.add("hidden");
+                            successContainer.classList.remove("hidden");
+    
+                            // Display Ticket ID
+                            registrationIDElement.textContent = registrationResult.ticket_id;
+    
+                            // Generate QR Code
+                            new QRCode(ticketQRCode, {
+                                text: registrationResult.ticket_id,
+                                width: 160,
+                                height: 160
+                            });
+                        },
+                        prefill: {
+                            name: name,
+                            email: email,
+                            contact: phone
+                        },
+                        theme: {
+                            color: "#3399cc"
+                        }
                     };
-                    document.body.appendChild(script);
+    
+                    const rzp = new Razorpay(options);
+                    rzp.open();
                 } else {
-                    initializeRazorpay(userData, orderId);
+                    alert("Error creating payment order. Please try again.");
                 }
+            } else {
+                alert("Error: Could not process registration.");
             }
-        } else {
-            // If offline payment, complete registration without payment
-            completeRegistration(userData);
+        } catch (error) {
+            console.error("Registration Error:", error);
+            alert("An error occurred. Please try again.");
         }
     });
 
