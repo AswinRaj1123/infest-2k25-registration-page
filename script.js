@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const ticketPaymentStatus = document.getElementById("ticket-payment-status");
     let currentStep = 0;
     let paymentId = null;
-    let orderId = null;   
+    let orderId = null;
     let registrationData = null;
 
     // ✅ Function to update form steps and progress bar
@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", function () {
         event.preventDefault();
         if (currentStep < formSections.length - 1) {
             currentStep++;
-            updateStep(currentStep);     
+            updateStep(currentStep);
         }
     });
 
@@ -176,14 +176,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 registrationIDElement.textContent = result.ticket_id;
 
                 // Generate QR Code
-                ticketQRCode.innerHTML = '';
-                if (ticketQRCode.childElementCount === 0){
                 new QRCode(ticketQRCode, {
                     text: result.ticket_id,
                     width: 160,
                     height: 160
                 });
-            }
 
                 // Update payment status display
                 if (userData.payment_status === "paid") {
@@ -220,8 +217,6 @@ document.addEventListener("DOMContentLoaded", function () {
     // ✅ Form Submission
     submitButton.addEventListener("click", async function (event) {
         event.preventDefault();
-        button.disabled = true;
-        button.textContent = "Please Wait...";
 
         // Get form values
         const name = document.getElementById("name").value;
