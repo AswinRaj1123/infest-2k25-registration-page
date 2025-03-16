@@ -93,7 +93,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function initializeRazorpay(userData, orderId) {
         const options = {
             key: "rzp_test_0DbywO9fUpbt3w", // Replace with your Razorpay key
-            amount: 25000, // Amount in paise (250 INR)
+            amount: 250 * 100, // Amount in paise (250 INR)
             currency: "INR",
             name: "INFEST 2K25",
             description: "Registration Fee",
@@ -132,7 +132,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const response = await fetch("https://infest-2k25-registration-page.onrender.com/create-order", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ amount: 250 })
+                body: JSON.stringify({ amount: 250 * 100, currency: "INR" })
             });
             
             const result = await response.json();
