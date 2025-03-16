@@ -39,13 +39,7 @@ document.addEventListener("DOMContentLoaded", function () {
         event.preventDefault();
         if (currentStep < formSections.length - 1) {
             currentStep++;
-            updateStep(currentStep);
-            if (formSections[currentStep]) {
-                // Force scroll to top of the current section
-                setTimeout(() => {
-                    window.scrollTo(0, formSections[currentStep].offsetTop - 20);
-                }, 10);
-                
+            updateStep(currentStep);     
         }
     });
 
