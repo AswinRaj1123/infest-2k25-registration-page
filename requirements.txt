@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+pymongo
+qrcode[pil]
+python-multipart
+pydantic
+python-dotenv
+razorpay

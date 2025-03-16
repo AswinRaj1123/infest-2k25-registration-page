@@ -12,6 +12,7 @@ import razorpay
 from datetime import datetime
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+from fastapi import Request
 load_dotenv()
 os.makedirs("qrcodes", exist_ok=True)
 
@@ -118,32 +119,29 @@ def send_email(user_email, ticket_id, qr_path, user_data):
         print("Email Error:", e)
         return False
 
+from fastapi import Request
 
-@app.post("/create-order")
-async def create_order(order_req: OrderRequest):
-    if not razorpay_client:
-        raise HTTPException(status_code=500, detail="Payment gateway not configured properly")
-        
+@app.post("/create-payment-order")
+async def create_payment_order(request: Request):
+    data = await request.json()
+    amount = data.get("amount")  # Amount in INR (e.g., 100 for ₹100)
+    currency = data.get("currency", "INR")
+
     try:
-        amount_in_paise = 250 * 100  # Convert to paise (250 INR = 25000 paise)
-        
-        order_data = {
-            'amount': amount_in_paise,
-            'currency': 'INR',
-            'receipt': f'receipt_{datetime.now().timestamp()}',
-            'notes': {
-                'event': 'INFEST 2K25 Registration'
-            }
-        }
-        
-        print(f"Creating Razorpay order with data: {order_data}")
-        order = razorpay_client.order.create(data=order_data)
-        print(f"Order created: {order}")
-        
-        return {"status": "success", "order_id": order['id']}
+        # Convert amount to the smallest currency unit (e.g., paise for INR)
+        amount_in_paise = amount * 250
+
+        # Create Razorpay order
+        order = razorpay_client.order.create({
+            "amount": amount_in_paise,
+            "currency": currency,
+            "payment_capture": 1  # Auto-capture payment
+        })
+
+        return {"status": "success", "order_id": order["id"]}
     except Exception as e:
-        print(f"Razorpay Order Creation Error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Razorpay Error: {str(e)}")
+        print("Error creating Razorpay order:", e)
+        raise HTTPException(status_code=500, detail="Error creating payment order. Please try again.")
         
 # API to Verify Payment
 @app.post("/verify-payment")
