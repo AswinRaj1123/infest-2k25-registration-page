@@ -14,7 +14,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const offlineMessage = document.getElementById("offline-message");
     let currentStep = 0;
 
-    // ✅ Function to update form steps and progress bar
     function updateStep(step) {
         formSections.forEach((section, index) => {
             section.classList.toggle("hidden", index !== step);
@@ -26,7 +25,6 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // ✅ Event Listener for Next Step Button
     nextStepBtn.addEventListener("click", function (event) {
         event.preventDefault();
         if (currentStep < formSections.length - 1) {
@@ -35,7 +33,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    // ✅ Event Listener for Next to Payment Button
     nextToPaymentBtn.addEventListener("click", function (event) {
         event.preventDefault();
         if (currentStep < formSections.length - 1) {
@@ -44,7 +41,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    // ✅ Event Listener for Back to Personal Button
     backToPersonalBtn.addEventListener("click", function (event) {
         event.preventDefault();
         if (currentStep > 0) {
@@ -53,7 +49,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    // ✅ Event Listener for Back to Events Button
     backToEventsBtn.addEventListener("click", function (event) {
         event.preventDefault();
         if (currentStep > 0) {
@@ -62,23 +57,32 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    // ✅ Function to handle Razorpay payment
-    function handleRazorpayPayment(userData, ticket_id) {
-        const options = {
-            key: "rzp_test_0DbywO9fUpbt3w", // Replace with your Razorpay key
-            amount: 25000, // Amount in paise (e.g., 50000 = ₹500)
-            currency: "INR",
-            name: "INFEST 2K25",
-            description: "Event Registration Fee",
-            image: "infest-2k25 logo.png", // Replace with your logo URL
-            order_id: "order_9A33XWu170gUtm", // Replace with your order ID (generated from your backend)
-            handler: async function (response) {
-                // Payment successful
-                alert("Payment successful! Payment ID: " + response.razorpay_payment_id);
+    async function handleRazorpayPayment(userData, ticket_id) {
+        try {
+            const orderResponse = await fetch("https://infest-2k25-registration-page.onrender.com/create-order", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ amount: 25000 }) // ₹250 in paise
+            });
 
-                // Send payment confirmation to backend
-                try {
-                    const paymentResponse = await fetch("https://infest-2k25-registration-page.onrender.com/confirm-payment", {
+            const orderData = await orderResponse.json();
+            if (!orderData.order_id) {
+                alert("Error creating order. Try again.");
+                return;
+            }
+
+            const options = {
+                key: "rzp_test_0DbywO9fUpbt3w", // ✅ Replace with your actual Razorpay test/live key
+                amount: 25000,
+                currency: "INR",
+                name: "INFEST 2K25",
+                description: "Event Registration Fee",
+                order_id: orderData.order_id, // ✅ Use dynamically generated order ID
+                handler: async function (response) {
+                    alert("Payment successful! Payment ID: " + response.razorpay_payment_id);
+
+                    // ✅ Send payment confirmation to backend
+                    await fetch("https://infest-2k25-registration-page.onrender.com/confirm-payment", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
@@ -88,48 +92,39 @@ document.addEventListener("DOMContentLoaded", function () {
                         })
                     });
 
-                    const paymentResult = await paymentResponse.json();
-                    if (paymentResult.status === "success") {
-                        // Show success message and ticket
-                        registrationForm.classList.add("hidden");
-                        successContainer.classList.remove("hidden");
-                        registrationIDElement.textContent = ticket_id;
+                    // ✅ Update UI on successful payment
+                    registrationForm.classList.add("hidden");
+                    successContainer.classList.remove("hidden");
+                    registrationIDElement.textContent = ticket_id;
 
-                        // Generate QR Code
-                        new QRCode(ticketQRCode, {
-                            text: ticket_id,
-                            width: 160,
-                            height: 160
-                        });
+                    // ✅ Generate QR Code
+                    new QRCode(ticketQRCode, {
+                        text: ticket_id,
+                        width: 160,
+                        height: 160
+                    });
 
-                        alert("Registration and payment successful! Check your email.");
-                    } else {
-                        alert("Payment confirmation failed. Please contact support.");
-                    }
-                } catch (error) {
-                    console.error("Payment Confirmation Error:", error);
-                    alert("An error occurred during payment confirmation.");
-                }
-            },
-            prefill: {
-                name: userData.name,
-                email: userData.email,
-                contact: userData.phone,
-            },
-            theme: {
-                color: "#3399cc",
-            },
-        };
+                    alert("Registration and payment successful! Check your email.");
+                },
+                prefill: {
+                    name: userData.name,
+                    email: userData.email,
+                    contact: userData.phone,
+                },
+                theme: { color: "#3399cc" },
+            };
 
-        const rzp = new Razorpay(options);
-        rzp.open();
+            const rzp = new Razorpay(options);
+            rzp.open();
+        } catch (error) {
+            console.error("Error in payment:", error);
+            alert("Payment failed. Try again.");
+        }
     }
 
-    // ✅ Form Submission - Sends data to backend (MongoDB)
     submitButton.addEventListener("click", async function (event) {
         event.preventDefault();
 
-        // Get form values
         const name = document.getElementById("name").value;
         const email = document.getElementById("email").value;
         const phone = document.getElementById("phone").value;
@@ -139,13 +134,11 @@ document.addEventListener("DOMContentLoaded", function () {
         const department = document.getElementById("department").value;
         const payment_mode = document.querySelector("input[name='payment-mode']:checked").value;
 
-        // Get selected events
         const selectedEvents = [];
         document.querySelectorAll("input[name='selected_events[]']:checked").forEach(event => {
             selectedEvents.push(event.value);
         });
 
-        // Prepare data object
         const userData = {
             name, email, phone, whatsapp, college, year, department,
             events: selectedEvents, payment_mode
@@ -164,12 +157,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 const ticket_id = result.ticket_id;
 
                 if (payment_mode === "offline") {
-                    // Show offline payment message
                     registrationForm.classList.add("hidden");
                     successContainer.classList.remove("hidden");
                     registrationIDElement.textContent = ticket_id;
 
-                    // Generate QR Code
                     new QRCode(ticketQRCode, {
                         text: ticket_id,
                         width: 160,
@@ -179,7 +170,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     offlineMessage.classList.remove("hidden");
                     alert("Registration Successful! Please pay at the venue.");
                 } else if (payment_mode === "online") {
-                    // Initiate Razorpay payment
                     handleRazorpayPayment(userData, ticket_id);
                 }
             } else {
@@ -191,14 +181,12 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    // ✅ Copy Registration ID to Clipboard
     copyIDButton.addEventListener("click", function () {
         navigator.clipboard.writeText(registrationIDElement.textContent)
             .then(() => alert("Registration ID copied!"))
             .catch(err => console.error("Failed to copy ID:", err));
     });
 
-    // ✅ Limit Event Selection to 3
     document.querySelectorAll("input[name='selected_events[]']").forEach(checkbox => {
         checkbox.addEventListener("change", function () {
             const checkedBoxes = document.querySelectorAll("input[name='selected_events[]']:checked");
@@ -209,6 +197,5 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    // ✅ Initialize Step 1
     updateStep(currentStep);
 });

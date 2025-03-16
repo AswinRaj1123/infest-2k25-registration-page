@@ -1,4 +1,8 @@
-from fastapi import FastAPI, HTTPException, Form
+import logging
+import os
+from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import qrcode
 import smtplib
@@ -7,41 +11,49 @@ from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from pymongo import MongoClient
 import random
-import os
+import datetime
 import razorpay
-from datetime import datetime
-from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
-from fastapi import Request
+
+# Load environment variables
 load_dotenv()
-os.makedirs("qrcodes", exist_ok=True)
 
+# Secure Credentials from .env
+MONGO_URI = os.getenv("MONGO_URI")
+EMAIL_USER = os.getenv("EMAIL_USER")
+EMAIL_PASS = os.getenv("EMAIL_PASS")
+RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
+RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
 
+# Logging setup
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Initialize FastAPI
 app = FastAPI()
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins (Change to specific origins for security)
-    allow_credentials=True,
-    allow_methods=["*"],  # Allow all HTTP methods
-    allow_headers=["*"],  # Allow all headers
-)
 
 # MongoDB Connection
-MONGO_URI = (os.getenv("MONGO_URI"))
-client = MongoClient(MONGO_URI)
-db = client["infest_db"]
-collection = db["registrations"]
+try:
+    client = MongoClient(MONGO_URI)
+    db = client["infest_db"]
+    collection = db["registrations"]
+    logger.info("Connected to MongoDB Atlas")
+except Exception as e:
+    logger.error(f"MongoDB Connection Error: {e}")
+    raise
 
-# Email Configuration
-EMAIL_USER = (os.getenv("EMAIL_USER"))
-EMAIL_PASS = (os.getenv("EMAIL_PASS"))
-
-# Initialize Razorpay client - Replace with your actual keys
-RAZORPAY_KEY_ID = (os.getenv("RAZORPAY_KEY_ID"))
-RAZORPAY_KEY_SECRET = (os.getenv("RAZORPAY_KEY_SECRET"))
+# Razorpay Client
 razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
-# Pydantic Model for Validation
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Adjust if needed
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Pydantic Models
 class RegistrationData(BaseModel):
     name: str
     email: str
@@ -52,18 +64,15 @@ class RegistrationData(BaseModel):
     department: str
     events: list
     payment_mode: str
-    project_link: str = None
-    payment_id: str = None
-    payment_status: str = "pending"
 
-class OrderRequest(BaseModel):
-    amount: int
+class StatusUpdateData(BaseModel):
+    ticket_id: str
+    status_type: str  # "paid" or "attended"
 
-class PaymentVerification(BaseModel):
-    razorpay_order_id: str
-    razorpay_payment_id: str
-    razorpay_signature: str
-    registration_data: dict
+class PaymentConfirmation(BaseModel):
+    ticket_id: str
+    payment_id: str
+    payment_status: str
 
 # Function to Generate Ticket ID
 def generate_ticket_id():
@@ -83,10 +92,6 @@ def send_email(user_email, ticket_id, qr_path, user_data):
     msg["From"] = EMAIL_USER
     msg["To"] = user_email
     msg["Subject"] = "INFEST 2K25 - Registration Confirmation"
-
- # Determine payment status
-    payment_status = "Paid" if user_data.get('payment_status') == "paid" else "Payment Pending"
-    payment_info = "Payment completed successfully" if payment_status == "Paid" else "Please complete your payment at the venue"
 
     body = f"""
     <h2>Thank you for registering for INFEST 2K25!</h2>
@@ -119,158 +124,91 @@ def send_email(user_email, ticket_id, qr_path, user_data):
         print("Email Error:", e)
         return False
 
-@app.post("/create-payment-order")
-async def create_payment_order(request: Request):
-    data = await request.json()
-    amount = data.get("amount")  # Amount in INR (e.g., 100 for ₹100)
-    currency = data.get("currency", "INR")
-
-    try:
-        # Convert amount to the smallest currency unit (e.g., paise for INR)
-        amount_in_paise = amount * 250
-
-        # Create Razorpay order
-        order = razorpay_client.order.create({
-            "amount": amount_in_paise,
-            "currency": currency,
-            "payment_capture": 1  # Auto-capture payment
-        })
-
-        return {"status": "success", "order_id": order["id"]}
-    except Exception as e:
-        print("Error creating Razorpay order:", e)
-        raise HTTPException(status_code=500, detail="Error creating payment order. Please try again.")
-        
-# API to Verify Payment
-@app.post("/verify-payment")
-async def verify_payment(payment_data: PaymentVerification):
-    try:
-        # Build the parameters dict to verify signature
-        params_dict = {
-            'razorpay_order_id': payment_data.razorpay_order_id,
-            'razorpay_payment_id': payment_data.razorpay_payment_id,
-            'razorpay_signature': payment_data.razorpay_signature
-        }
-        
-        # Verify signature
-        razorpay_client.utility.verify_payment_signature(params_dict)
-        
-        # If verification successful, update registration data and save
-        registration_data = payment_data.registration_data
-        registration_data['payment_id'] = payment_data.razorpay_payment_id
-        registration_data['payment_status'] = "paid"
-        registration_data['payment_time'] = datetime.now().isoformat()
-        registration_data['payment_order_id'] = payment_data.razorpay_order_id
-        
-        # Generate ticket ID
-        ticket_id = generate_ticket_id()
-        registration_data['ticket_id'] = ticket_id
-        
-        # Save registration data
-        collection.insert_one(registration_data)
-        
-        # Generate QR Code
-        qr_path = generate_qr(ticket_id)
-        
-        # Send email notification
-        email_sent = send_email(registration_data['email'], ticket_id, qr_path, registration_data)
-        
-        return {
-            "status": "success", 
-            "ticket_id": ticket_id, 
-            "payment_status": "paid",
-            "email_sent": email_sent
-        }
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Payment verification failed: {str(e)}")
-
-# API to Handle Registration (for both online and offline payments)
+# 🔹 Registration Route
 @app.post("/register")
 async def register_user(data: RegistrationData):
-    # If it's an online payment with payment_id, verify payment status
-    if data.payment_mode == "online" and data.payment_id:
-        try:
-            # You might want to verify the payment with Razorpay here
-            # For now, we'll trust the client-side verification and just mark it as paid
-            payment_status = "paid"
-        except Exception as e:
-            payment_status = "failed"
-            raise HTTPException(status_code=400, detail=f"Payment verification failed: {str(e)}")
-    else:
-        # For offline payment or if payment_id is not provided
-        payment_status = "pending"
-    
-    # Generate ticket ID
     ticket_id = generate_ticket_id()
-    
-    # Generate QR Code
     qr_path = generate_qr(ticket_id)
-    
-    # Update user data
+
     user_data = data.dict()
     user_data["ticket_id"] = ticket_id
-    user_data["payment_status"] = payment_status
-    user_data["registration_time"] = datetime.now().isoformat()
-    
+    user_data["registration_date"] = datetime.datetime.now()
+    user_data["payment_status"] = "pending" if data.payment_mode == "offline" else "paid"
+    user_data["attended"] = False
+
     try:
-        # Save to database
         collection.insert_one(user_data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database Error: {str(e)}")
-    
-    # Send confirmation email
+
     email_sent = send_email(data.email, ticket_id, qr_path, user_data)
-    
-    return {
-        "status": "success", 
-        "ticket_id": ticket_id, 
-        "qr_code": qr_path, 
-        "email_sent": email_sent,
-        "payment_status": payment_status
-    }
 
-# API endpoint to check payment status (useful for verifying after redirect)
-@app.get("/payment-status/{ticket_id}")
-async def check_payment_status(ticket_id: str):
+    return {"status": "success", "ticket_id": ticket_id, "qr_code": qr_path, "email_sent": email_sent}
+
+# 🔹 Razorpay Order Creation
+@app.post("/create-order")
+async def create_order(data: dict):
     try:
-        registration = collection.find_one({"ticket_id": ticket_id})
-        if not registration:
-            raise HTTPException(status_code=404, detail="Registration not found")
-        
-        return {
-            "status": "success",
-            "ticket_id": ticket_id,
-            "payment_status": registration.get("payment_status", "pending")
-        }
+        amount = data["amount"]  # Amount in paise
+        order = razorpay_client.order.create({
+            "amount": amount,
+            "currency": "INR",
+            "payment_capture": 1  # Auto capture payment
+        })
+        return {"order_id": order["id"]}
     except Exception as e:
-        if isinstance(e, HTTPException):
-            raise e
-        raise HTTPException(status_code=500, detail=f"Error checking payment status: {str(e)}")
+        logger.error(f"Razorpay Order Creation Error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create Razorpay order.")
 
-# Webhook for Razorpay (for automatic payment verification)
-@app.post("/razorpay-webhook")
-async def razorpay_webhook(webhook_data: dict):
+# 🔹 Payment Confirmation Route
+@app.post("/confirm-payment")
+async def confirm_payment(data: PaymentConfirmation):
     try:
-        # Verify webhook signature if Razorpay provides one
-        # Process payment notification
-        if webhook_data.get("event") == "payment.authorized":
-            payment_id = webhook_data.get("payload", {}).get("payment", {}).get("entity", {}).get("id")
-            order_id = webhook_data.get("payload", {}).get("payment", {}).get("entity", {}).get("order_id")
-            
-            if payment_id and order_id:
-                # Update registration record with payment info
-                collection.update_one(
-                    {"payment_order_id": order_id},
-                    {"$set": {
-                        "payment_id": payment_id,
-                        "payment_status": "paid",
-                        "payment_webhook_time": datetime.now().isoformat()
-                    }}
-                )
-                
+        result = collection.update_one(
+            {"ticket_id": data.ticket_id},
+            {"$set": {"payment_status": "paid", "payment_id": data.payment_id}}
+        )
+
+        if result.matched_count == 0:
+            return {"status": "error", "message": "Ticket not found"}
+
         return {"status": "success"}
     except Exception as e:
-        print(f"Webhook Error: {e}")
-        # We return 200 even for errors to acknowledge receipt
-        return {"status": "error", "detail": str(e)}
-    
+        logger.error(f"Payment Confirmation Error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to confirm payment.")
+
+# 🔹 Get Participant Details
+@app.get("/participant/{ticket_id}")
+async def get_participant(ticket_id: str):
+    try:
+        participant = collection.find_one({"ticket_id": ticket_id})
+        if participant:
+            participant["_id"] = str(participant["_id"])
+            if "registration_date" in participant:
+                participant["registration_date"] = participant["registration_date"].strftime("%Y-%m-%d %H:%M:%S")
+            return {"status": "success", "participant": participant}
+        return {"status": "error", "message": "Participant not found"}
+    except Exception as e:
+        logger.error(f"Database Error: {e}")
+        raise HTTPException(status_code=500, detail="Database Error")
+
+# 🔹 Update Participant Status (Paid or Attended)
+@app.post("/update-status")
+async def update_status(data: StatusUpdateData):
+    try:
+        update_data = {"attended": True} if data.status_type == "attended" else {"payment_status": "paid"}
+        result = collection.update_one({"ticket_id": data.ticket_id}, {"$set": update_data})
+
+        if result.matched_count == 0:
+            return {"status": "error", "message": "Participant not found"}
+        
+        return {"status": "success"}
+    except Exception as e:
+        logger.error(f"Database Error: {e}")
+        raise HTTPException(status_code=500, detail="Database Error")
+
+# 🔹 API Root
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to INFEST 2K25 Scanner API"}
+
