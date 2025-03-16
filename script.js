@@ -243,7 +243,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         amount: 250 * 100,  // Amount in paise
                         currency: "INR",
                         order_id: paymentResult.order_id,
-                        name: "INFEST 2K25 Registration",
+                        name: "INFEST 2K25",
                         description: "Payment for INFEST 2K25 registration",
                         handler: function (response) {
                             alert("Payment successful! Payment ID: " + response.razorpay_payment_id);
