@@ -239,7 +239,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (paymentResult.status === "success") {
                     // Step 3: Open Razorpay payment modal
                     const options = {
-                        key: "your_razorpay_key_id",  // Replace with your Razorpay key ID
+                        key: "rzp_test_0DbywO9fUpbt3w",  // Replace with your Razorpay key ID
                         amount: 250 * 100,  // Amount in paise
                         currency: "INR",
                         order_id: paymentResult.order_id,
