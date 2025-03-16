@@ -24,6 +24,20 @@ document.addEventListener("DOMContentLoaded", function () {
             stepElement.classList.toggle("active", index === step);
             stepElement.classList.toggle("completed", index < step);
         });
+        window.scrollTo(0, 0);
+        // Scroll to top of the form
+    
+        // Then, if needed, scroll to the specific section
+        if (formSections[step]) {
+            // You can adjust this timeout if needed
+            setTimeout(() => {
+                // Force scroll to top of the window
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            }, 10);
+        }
     }
 
     // ✅ Event Listener for Next Step Button
@@ -60,6 +74,16 @@ document.addEventListener("DOMContentLoaded", function () {
             currentStep--;
             updateStep(currentStep);
         }
+    });
+    document.getElementById("submit-registration").addEventListener('click', function(event) {
+        const button = event.target;
+
+        // Disable the button
+        button.disabled = true;
+
+        // Change button text to indicate waiting
+        button.textContent = "Please wait...";
+        
     });
 
     // ✅ Function to handle Razorpay payment
