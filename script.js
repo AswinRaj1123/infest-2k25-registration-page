@@ -59,10 +59,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
     async function handleRazorpayPayment(userData, ticket_id) {
         try {
-            const orderResponse = await fetch("http://localhost:8000/create-order", {
+            const orderResponse = await fetch("https://infest-2k25-registration-page.onrender.com/create-order", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ amount: 50000 }) // ₹500 in paise
+                body: JSON.stringify({ amount: 25000 }) // ₹250 in paise
             });
     
             const orderData = await orderResponse.json();
