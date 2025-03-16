@@ -65,7 +65,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // ✅ Function to handle Razorpay payment
     function handleRazorpayPayment(userData, ticket_id) {
         const options = {
-            key: "YOUR_RAZORPAY_KEY", // Replace with your Razorpay key
+            key: "rzp_test_0DbywO9fUpbt3w", // Replace with your Razorpay key
             amount: 25000, // Amount in paise (e.g., 50000 = ₹500)
             currency: "INR",
             name: "INFEST 2K25",
