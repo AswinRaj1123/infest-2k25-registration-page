@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const orderResponse = await fetch("https://infest-2k25-registration-page.onrender.com/create-order", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ amount: 25000 }) // ₹250 in paise
+                body: JSON.stringify({ amount: 50000 }) // ₹500 in paise
             });
     
             const orderData = await orderResponse.json();
@@ -96,8 +96,19 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (confirmResult.status === "success") {
                         alert("Payment confirmed! Fetching your ticket details...");
     
-                        // ✅ Fetch Participant Details Immediately After Payment
-                        fetchParticipantDetails(ticket_id);
+                        // ✅ Show the success page
+                        registrationForm.classList.add("hidden");
+                        successContainer.classList.remove("hidden");
+                        registrationIDElement.textContent = ticket_id;
+    
+                        // ✅ Generate QR Code
+                        new QRCode(ticketQRCode, {
+                            text: ticket_id,
+                            width: 160,
+                            height: 160
+                        });
+    
+                        alert("Registration and payment successful! Check your email.");
                     } else {
                         alert("Payment confirmation failed. Contact support.");
                     }
@@ -116,11 +127,15 @@ document.addEventListener("DOMContentLoaded", function () {
             console.error("Error in payment:", error);
             alert("Payment failed. Try again.");
         }
-    }    
+    }        
 
     submitButton.addEventListener("click", async function (event) {
         event.preventDefault();
-
+    
+        // ✅ Change button text to "Please Wait..."
+        submitButton.textContent = "Please Wait...";
+        submitButton.disabled = true; // Disable button to prevent multiple clicks
+    
         const name = document.getElementById("name").value;
         const email = document.getElementById("email").value;
         const phone = document.getElementById("phone").value;
@@ -129,40 +144,40 @@ document.addEventListener("DOMContentLoaded", function () {
         const year = document.getElementById("year").value;
         const department = document.getElementById("department").value;
         const payment_mode = document.querySelector("input[name='payment-mode']:checked").value;
-
+    
         const selectedEvents = [];
         document.querySelectorAll("input[name='selected_events[]']:checked").forEach(event => {
             selectedEvents.push(event.value);
         });
-
+    
         const userData = {
             name, email, phone, whatsapp, college, year, department,
             events: selectedEvents, payment_mode
         };
-
+    
         try {
             const response = await fetch("https://infest-2k25-registration-page.onrender.com/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(userData)
             });
-
+    
             const result = await response.json();
-
+    
             if (result.status === "success") {
                 const ticket_id = result.ticket_id;
-
+    
                 if (payment_mode === "offline") {
                     registrationForm.classList.add("hidden");
                     successContainer.classList.remove("hidden");
                     registrationIDElement.textContent = ticket_id;
-
+    
                     new QRCode(ticketQRCode, {
                         text: ticket_id,
                         width: 160,
                         height: 160
                     });
-
+    
                     offlineMessage.classList.remove("hidden");
                     alert("Registration Successful! Please pay at the venue.");
                 } else if (payment_mode === "online") {
@@ -174,9 +189,13 @@ document.addEventListener("DOMContentLoaded", function () {
         } catch (error) {
             console.error("Registration Error:", error);
             alert("An error occurred. Please try again.");
+        } finally {
+            // ✅ Restore button text after processing is complete
+            submitButton.textContent = "Complete Registration";
+            submitButton.disabled = false; // Enable button again
         }
     });
-
+    
     copyIDButton.addEventListener("click", function () {
         navigator.clipboard.writeText(registrationIDElement.textContent)
             .then(() => alert("Registration ID copied!"))
