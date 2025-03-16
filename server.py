@@ -119,8 +119,6 @@ def send_email(user_email, ticket_id, qr_path, user_data):
         print("Email Error:", e)
         return False
 
-from fastapi import Request
-
 @app.post("/create-payment-order")
 async def create_payment_order(request: Request):
     data = await request.json()
