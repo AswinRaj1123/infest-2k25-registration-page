@@ -27,6 +27,11 @@ document.addEventListener("DOMContentLoaded", function () {
             stepElement.classList.toggle("active", index === step);
             stepElement.classList.toggle("completed", index < step);
         });
+        if (formSections[step]) {
+            formSections[step].scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Alternative approach:
+            // window.scrollTo({ top: formSections[step].offsetTop - 20, behavior: 'smooth' });
+        }
     }
 
     // ✅ Event Listener for Next Step Button
@@ -35,6 +40,12 @@ document.addEventListener("DOMContentLoaded", function () {
         if (currentStep < formSections.length - 1) {
             currentStep++;
             updateStep(currentStep);
+            if (formSections[currentStep]) {
+                // Force scroll to top of the current section
+                setTimeout(() => {
+                    window.scrollTo(0, formSections[currentStep].offsetTop - 20);
+                }, 10);
+                
         }
     });
 
