@@ -16,6 +16,7 @@ from fastapi import Request
 load_dotenv()
 os.makedirs("qrcodes", exist_ok=True)
 
+
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -83,7 +84,7 @@ def send_email(user_email, ticket_id, qr_path, user_data):
     msg["To"] = user_email
     msg["Subject"] = "INFEST 2K25 - Registration Confirmation"
 
-    # Determine payment status
+ # Determine payment status
     payment_status = "Paid" if user_data.get('payment_status') == "paid" else "Payment Pending"
     payment_info = "Payment completed successfully" if payment_status == "Paid" else "Please complete your payment at the venue"
 
@@ -118,16 +119,30 @@ def send_email(user_email, ticket_id, qr_path, user_data):
         print("Email Error:", e)
         return False
 
-@app.post("/create-order")
-async def create_order(data: dict):
-    amount = data["amount"]  # Amount in paise (₹500 = 50000)
-    order = razorpay_client.order.create({
-        "amount": amount,
-        "currency": "INR",
-        "payment_capture": 1  # Auto-captures payment
-    })
-    return {"order_id": order["id"]}
+from fastapi import Request
 
+@app.post("/create-payment-order")
+async def create_payment_order(request: Request):
+    data = await request.json()
+    amount = data.get("amount")  # Amount in INR (e.g., 100 for ₹100)
+    currency = data.get("currency", "INR")
+
+    try:
+        # Convert amount to the smallest currency unit (e.g., paise for INR)
+        amount_in_paise = amount * 250
+
+        # Create Razorpay order
+        order = razorpay_client.order.create({
+            "amount": amount_in_paise,
+            "currency": currency,
+            "payment_capture": 1  # Auto-capture payment
+        })
+
+        return {"status": "success", "order_id": order["id"]}
+    except Exception as e:
+        print("Error creating Razorpay order:", e)
+        raise HTTPException(status_code=500, detail="Error creating payment order. Please try again.")
+        
 # API to Verify Payment
 @app.post("/verify-payment")
 async def verify_payment(payment_data: PaymentVerification):
@@ -203,7 +218,6 @@ async def register_user(data: RegistrationData):
         # Save to database
         collection.insert_one(user_data)
     except Exception as e:
-        print(f"Database Error: {str(e)}")  # Log the database error
         raise HTTPException(status_code=500, detail=f"Database Error: {str(e)}")
     
     # Send confirmation email
@@ -261,3 +275,4 @@ async def razorpay_webhook(webhook_data: dict):
         print(f"Webhook Error: {e}")
         # We return 200 even for errors to acknowledge receipt
         return {"status": "error", "detail": str(e)}
+    
