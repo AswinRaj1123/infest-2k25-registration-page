@@ -203,121 +203,29 @@ document.addEventListener("DOMContentLoaded", function () {
         };
 
         try {
-            // If online payment selected, initiate Razorpay
-            if (payment_mode === "online") {
-                // Calculate amount based on number of events
-                const eventCount = selectedEvents.length;
-                const basePrice = 250; // Base price per event
-                const amount = basePrice * eventCount;
-
-                // First create registration record in database
-                const regResponse = await fetch("https://infest-2k25-registration-page.onrender.com/create_registration", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(userData)
-                });
+            // For offline payment
+            const response = await fetch("/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(userData)
+            });
+            
+            const result = await response.json();
+            
+            if (result.status === "success") {
+                // Hide form & show confirmation
+                registrationForm.classList.add("hidden");
+                successContainer.classList.remove("hidden");
                 
-                const regResult = await regResponse.json();
+                // Make offline payment message visible
+                document.getElementById("offline-message").style.display = "block";
                 
-                if (regResult.status === "success") {
-                    // Get order details for Razorpay
-                    const orderResponse = await fetch("https://infest-2k25-registration-page.onrender.com/create_order", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            amount: amount * 250, // Amount in paise
-                            ticket_id: regResult.ticket_id
-                        })
-                    });
-                    
-                    const orderResult = await orderResponse.json();
-                    
-                    if (orderResult.status === "success") {
-                        // Initialize Razorpay
-                        const options = {
-                            key: "rzp_test_0DbywO9fUpbt3w", // Replace with your actual test key
-                            amount: amount * 250, // Amount in paise
-                            currency: "INR",
-                            name: "INFEST 2K25",
-                            description: "Event Registration Fee",
-                            order_id: orderResult.order_id,
-                            handler: async function(response) {
-                                // Verify payment
-                                const verifyResponse = await fetch("https://infest-2k25-registration-page.onrender.com/verify_payment", {
-                                    method: "POST",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({
-                                        razorpay_payment_id: response.razorpay_payment_id,
-                                        razorpay_order_id: response.razorpay_order_id,
-                                        razorpay_signature: response.razorpay_signature,
-                                        ticket_id: regResult.ticket_id
-                                    })
-                                });
-                                
-                                const verifyResult = await verifyResponse.json();
-                                
-                                if (verifyResult.status === "success") {
-                                    // Hide form & show confirmation
-                                    registrationForm.classList.add("hidden");
-                                    successContainer.classList.remove("hidden");
-                                    
-                                    // Update ticket payment status
-                                    const paymentStatus = document.getElementById("ticket-payment-status");
-                                    paymentStatus.classList.remove("pending");
-                                    paymentStatus.classList.add("completed");
-                                    paymentStatus.querySelector(".status-text").textContent = "Payment Completed";
-                                    
-                                    // Display Ticket info
-                                    displayTicketInfo(regResult.ticket_id, name, email, selectedEvents, department);
-                                    
-                                    alert("Registration and Payment Successful! Check your email.");
-                                } else {
-                                    alert("Payment verification failed. Please contact support.");
-                                }
-                            },
-                            prefill: {
-                                name: name,
-                                email: email,
-                                contact: phone
-                            },
-                            theme: {
-                                color: "#6c63ff"
-                            }
-                        };
-                        
-                        const paymentObject = new Razorpay(options);
-                        paymentObject.open();
-                    } else {
-                        alert("Error: Could not create payment order.");
-                    }
-                } else {
-                    alert("Error: Could not process registration.");
-                }
+                // Display Ticket info
+                displayTicketInfo(result.ticket_id, name, email, selectedEvents, department);
+                
+                alert("Registration Successful! Check your email.");
             } else {
-                // For offline payment
-                const response = await fetch("https://infest-2k25-registration-page.onrender.com/register", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(userData)
-                });
-                
-                const result = await response.json();
-                
-                if (result.status === "success") {
-                    // Hide form & show confirmation
-                    registrationForm.classList.add("hidden");
-                    successContainer.classList.remove("hidden");
-                    
-                    // Make offline payment message visible
-                    document.getElementById("offline-message").style.display = "block";
-                    
-                    // Display Ticket info
-                    displayTicketInfo(result.ticket_id, name, email, selectedEvents, department);
-                    
-                    alert("Registration Successful! Check your email.");
-                } else {
-                    alert("Error: Could not process registration.");
-                }
+                alert("Error: Could not process registration.");
             }
         } catch (error) {
             console.error("Registration Error:", error);

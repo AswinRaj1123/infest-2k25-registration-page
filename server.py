@@ -203,6 +203,7 @@ async def register_user(data: RegistrationData):
         # Save to database
         collection.insert_one(user_data)
     except Exception as e:
+        print(f"Database Error: {str(e)}")  # Log the database error
         raise HTTPException(status_code=500, detail=f"Database Error: {str(e)}")
     
     # Send confirmation email
