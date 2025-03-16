@@ -28,6 +28,7 @@ document.addEventListener("DOMContentLoaded", function () {
             stepElement.classList.toggle("completed", index < step);
         });
         window.scrollTo(0, 0);
+        // Scroll to top of the form
     
         // Then, if needed, scroll to the specific section
         if (formSections[step]) {
@@ -77,7 +78,7 @@ document.addEventListener("DOMContentLoaded", function () {
             updateStep(currentStep);
         }
     });
-    submitButton.addEventListener('click', function(event) {
+    document.getElementById("submit-registration").addEventListener('click', function(event) {
         const button = event.target;
 
         // Disable the button
@@ -85,12 +86,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Change button text to indicate waiting
         button.textContent = "Please wait...";
-
-        // Re-enable the button after 10 seconds
-        setTimeout(() => {
-            button.disabled = false;
-            button.textContent = "Finish Registration";
-        }, 10000);
+        
     });
 
     // Function to initialize Razorpay payment
