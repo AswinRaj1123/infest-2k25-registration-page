@@ -251,17 +251,38 @@ document.addEventListener("DOMContentLoaded", function () {
             const registrationResult = await registrationResponse.json();
     
             if (registrationResult.status === "success") {
-                // Step 2: Create Razorpay order
+                if (payment_mode === "offline") {
+                    // ✅ If "Pay at Venue" is selected, show the confirmation page directly
+                    registrationForm.classList.add("hidden");
+                    successContainer.classList.remove("hidden");
+    
+                    registrationIDElement.textContent = registrationResult.ticket_id;
+    
+                    new QRCode(ticketQRCode, {
+                        text: registrationResult.ticket_id,
+                        width: 160,
+                        height: 160
+                    });
+    
+                    // Update ticket status to "Payment Pending"
+                    document.getElementById("ticket-payment-status").classList.add("pending");
+                    document.getElementById("ticket-payment-status").innerHTML = `<span class="status-icon"></span><span class="status-text">Payment Pending</span>`;
+    
+                    alert("Registration Successful! Please pay at the venue.");
+                    return;
+                }
+    
+                // ✅ If "Online Payment" is selected, create Razorpay order
                 const paymentResponse = await fetch("https://infest-2k25-registration-page.onrender.com/create-payment-order", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ amount: 100, currency: "INR" })  // Amount in INR
+                    body: JSON.stringify({ amount: 250, currency: "INR" })  // Amount in INR
                 });
     
                 const paymentResult = await paymentResponse.json();
     
                 if (paymentResult.status === "success") {
-                    // Step 3: Open Razorpay payment modal
+                    // ✅ Open Razorpay payment modal
                     const options = {
                         key: "rzp_test_0DbywO9fUpbt3w",  // Replace with your Razorpay key ID
                         amount: 250 * 100,  // Amount in paise
@@ -271,19 +292,19 @@ document.addEventListener("DOMContentLoaded", function () {
                         description: "Payment for INFEST 2K25 registration",
                         handler: function (response) {
                             alert("Payment successful! Payment ID: " + response.razorpay_payment_id);
-                            // Hide form & show confirmation
                             registrationForm.classList.add("hidden");
                             successContainer.classList.remove("hidden");
     
-                            // Display Ticket ID
                             registrationIDElement.textContent = registrationResult.ticket_id;
     
-                            // Generate QR Code
                             new QRCode(ticketQRCode, {
                                 text: registrationResult.ticket_id,
                                 width: 160,
                                 height: 160
                             });
+    
+                            document.getElementById("ticket-payment-status").classList.remove("pending");
+                            document.getElementById("ticket-payment-status").innerHTML = `<span class="status-icon"></span><span class="status-text">Payment Completed</span>`;
                         },
                         prefill: {
                             name: name,
@@ -308,6 +329,7 @@ document.addEventListener("DOMContentLoaded", function () {
             alert("An error occurred. Please try again.");
         }
     });
+    
 
     // ✅ Copy Registration ID to Clipboard
     copyIDButton.addEventListener("click", function () {
