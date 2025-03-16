@@ -164,13 +164,12 @@ async def create_order(data: dict):
 @app.post("/confirm-payment")
 async def confirm_payment(data: PaymentConfirmation):
     try:
-        # Log the request to check if correct data is coming
         logger.info(f"Confirming payment for Ticket ID: {data.ticket_id} | Payment ID: {data.payment_id}")
 
-        # Update MongoDB: Set payment as "paid"
+        # Update MongoDB to mark payment as paid
         result = collection.update_one(
-            {"ticket_id": data.ticket_id},  # Find by ticket_id
-            {"$set": {"payment_status": "paid", "payment_id": data.payment_id}}  # Update status
+            {"ticket_id": data.ticket_id},
+            {"$set": {"payment_status": "paid", "payment_id": data.payment_id}}
         )
 
         # Check if the ticket ID exists in the database
@@ -178,8 +177,17 @@ async def confirm_payment(data: PaymentConfirmation):
             logger.warning(f"Ticket ID {data.ticket_id} not found in database!")
             return {"status": "error", "message": "Ticket not found"}
 
-        logger.info(f"Payment confirmed for Ticket ID: {data.ticket_id}")
-        return {"status": "success", "message": "Payment confirmed"}
+        # ✅ Fetch user details from MongoDB to send email
+        participant = collection.find_one({"ticket_id": data.ticket_id})
+        if not participant:
+            return {"status": "error", "message": "Participant not found"}
+
+        qr_path = generate_qr(data.ticket_id)
+        email_sent = send_email(participant["email"], data.ticket_id, qr_path, participant)
+
+        logger.info(f"Payment confirmed and email sent to {participant['email']}")
+
+        return {"status": "success", "message": "Payment confirmed and email sent"}
 
     except Exception as e:
         logger.error(f"Payment Confirmation Error: {e}")
@@ -229,4 +237,3 @@ async def update_status(data: StatusUpdateData):
 @app.get("/")
 def read_root():
     return {"message": "Welcome to INFEST 2K25 Scanner API"}
-

@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const orderResponse = await fetch("https://infest-2k25-registration-page.onrender.com/create-order", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ amount: 50000 }) // ₹500 in paise
+                body: JSON.stringify({ amount: 25000 }) // ₹500 in paise
             });
     
             const orderData = await orderResponse.json();
@@ -96,19 +96,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (confirmResult.status === "success") {
                         alert("Payment confirmed! Fetching your ticket details...");
     
-                        // ✅ Show the success page
-                        registrationForm.classList.add("hidden");
-                        successContainer.classList.remove("hidden");
-                        registrationIDElement.textContent = ticket_id;
-    
-                        // ✅ Generate QR Code
-                        new QRCode(ticketQRCode, {
-                            text: ticket_id,
-                            width: 160,
-                            height: 160
-                        });
-    
-                        alert("Registration and payment successful! Check your email.");
+                        // ✅ Fetch Participant Details to Show Correct Payment Status
+                        fetchParticipantDetails(ticket_id);
                     } else {
                         alert("Payment confirmation failed. Contact support.");
                     }
@@ -127,7 +116,7 @@ document.addEventListener("DOMContentLoaded", function () {
             console.error("Error in payment:", error);
             alert("Payment failed. Try again.");
         }
-    }        
+    }            
 
     submitButton.addEventListener("click", async function (event) {
         event.preventDefault();
@@ -214,3 +203,43 @@ document.addEventListener("DOMContentLoaded", function () {
 
     updateStep(currentStep);
 });
+
+async function fetchParticipantDetails(ticket_id) {
+    try {
+        const response = await fetch(`https://infest-2k25-registration-page.onrender.com/participant/${ticket_id}`);
+        const data = await response.json();
+
+        if (data.status === "success") {
+            const participant = data.participant;
+
+            registrationIDElement.textContent = participant.ticket_id;
+
+            // ✅ Update Payment Status
+            if (participant.payment_status === "paid") {
+                offlineMessage.classList.add("hidden");
+                document.getElementById("payment-status").innerHTML = 
+                    '<span class="status-paid"><i class="fas fa-check-circle"></i> Paid</span>';
+            } else {
+                document.getElementById("payment-status").innerHTML = 
+                    '<span class="status-pending"><i class="fas fa-clock"></i> Payment Pending</span>';
+            }
+
+            // ✅ Show the success page
+            registrationForm.classList.add("hidden");
+            successContainer.classList.remove("hidden");
+
+            // ✅ Generate QR Code
+            new QRCode(ticketQRCode, {
+                text: participant.ticket_id,
+                width: 160,
+                height: 160
+            });
+
+        } else {
+            alert("Error fetching participant details. Please contact support.");
+        }
+    } catch (error) {
+        console.error("Error fetching participant:", error);
+        alert("An error occurred while fetching participant details.");
+    }
+}
