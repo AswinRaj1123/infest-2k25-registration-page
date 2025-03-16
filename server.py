@@ -164,15 +164,23 @@ async def create_order(data: dict):
 @app.post("/confirm-payment")
 async def confirm_payment(data: PaymentConfirmation):
     try:
+        # Log the request to check if correct data is coming
+        logger.info(f"Confirming payment for Ticket ID: {data.ticket_id} | Payment ID: {data.payment_id}")
+
+        # Update MongoDB: Set payment as "paid"
         result = collection.update_one(
-            {"ticket_id": data.ticket_id},
-            {"$set": {"payment_status": "paid", "payment_id": data.payment_id}}
+            {"ticket_id": data.ticket_id},  # Find by ticket_id
+            {"$set": {"payment_status": "paid", "payment_id": data.payment_id}}  # Update status
         )
 
+        # Check if the ticket ID exists in the database
         if result.matched_count == 0:
+            logger.warning(f"Ticket ID {data.ticket_id} not found in database!")
             return {"status": "error", "message": "Ticket not found"}
 
-        return {"status": "success"}
+        logger.info(f"Payment confirmed for Ticket ID: {data.ticket_id}")
+        return {"status": "success", "message": "Payment confirmed"}
+
     except Exception as e:
         logger.error(f"Payment Confirmation Error: {e}")
         raise HTTPException(status_code=500, detail="Failed to confirm payment.")
@@ -181,13 +189,23 @@ async def confirm_payment(data: PaymentConfirmation):
 @app.get("/participant/{ticket_id}")
 async def get_participant(ticket_id: str):
     try:
+        logger.info(f"Fetching details for Ticket ID: {ticket_id}")
+        
         participant = collection.find_one({"ticket_id": ticket_id})
+        
         if participant:
-            participant["_id"] = str(participant["_id"])
+            participant["_id"] = str(participant["_id"])  # Convert _id to string
+            
+            # Convert datetime to string for JSON response
             if "registration_date" in participant:
                 participant["registration_date"] = participant["registration_date"].strftime("%Y-%m-%d %H:%M:%S")
+            
+            logger.info(f"Participant found: {participant}")
             return {"status": "success", "participant": participant}
+        
+        logger.warning(f"Participant with Ticket ID {ticket_id} not found!")
         return {"status": "error", "message": "Participant not found"}
+    
     except Exception as e:
         logger.error(f"Database Error: {e}")
         raise HTTPException(status_code=500, detail="Database Error")

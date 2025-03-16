@@ -59,30 +59,30 @@ document.addEventListener("DOMContentLoaded", function () {
 
     async function handleRazorpayPayment(userData, ticket_id) {
         try {
-            const orderResponse = await fetch("https://infest-2k25-registration-page.onrender.com/create-order", {
+            const orderResponse = await fetch("http://localhost:8000/create-order", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ amount: 25000 }) // ₹250 in paise
+                body: JSON.stringify({ amount: 50000 }) // ₹500 in paise
             });
-
+    
             const orderData = await orderResponse.json();
             if (!orderData.order_id) {
                 alert("Error creating order. Try again.");
                 return;
             }
-
+    
             const options = {
-                key: "rzp_test_0DbywO9fUpbt3w", // ✅ Replace with your actual Razorpay test/live key
+                key: "rzp_test_0DbywO9fUpbt3w",  // ✅ Replace with your actual Razorpay key
                 amount: 25000,
                 currency: "INR",
                 name: "INFEST 2K25",
                 description: "Event Registration Fee",
-                order_id: orderData.order_id, // ✅ Use dynamically generated order ID
+                order_id: orderData.order_id,  // ✅ Use dynamically generated order ID
                 handler: async function (response) {
                     alert("Payment successful! Payment ID: " + response.razorpay_payment_id);
-
+    
                     // ✅ Send payment confirmation to backend
-                    await fetch("https://infest-2k25-registration-page.onrender.com/confirm-payment", {
+                    const confirmResponse = await fetch("https://infest-2k25-registration-page.onrender.com/confirm-payment", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
@@ -91,20 +91,16 @@ document.addEventListener("DOMContentLoaded", function () {
                             payment_status: "success"
                         })
                     });
-
-                    // ✅ Update UI on successful payment
-                    registrationForm.classList.add("hidden");
-                    successContainer.classList.remove("hidden");
-                    registrationIDElement.textContent = ticket_id;
-
-                    // ✅ Generate QR Code
-                    new QRCode(ticketQRCode, {
-                        text: ticket_id,
-                        width: 160,
-                        height: 160
-                    });
-
-                    alert("Registration and payment successful! Check your email.");
+    
+                    const confirmResult = await confirmResponse.json();
+                    if (confirmResult.status === "success") {
+                        alert("Payment confirmed! Fetching your ticket details...");
+    
+                        // ✅ Fetch Participant Details Immediately After Payment
+                        fetchParticipantDetails(ticket_id);
+                    } else {
+                        alert("Payment confirmation failed. Contact support.");
+                    }
                 },
                 prefill: {
                     name: userData.name,
@@ -113,14 +109,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 },
                 theme: { color: "#3399cc" },
             };
-
+    
             const rzp = new Razorpay(options);
             rzp.open();
         } catch (error) {
             console.error("Error in payment:", error);
             alert("Payment failed. Try again.");
         }
-    }
+    }    
 
     submitButton.addEventListener("click", async function (event) {
         event.preventDefault();
