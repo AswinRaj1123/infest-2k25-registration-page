@@ -255,7 +255,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 const paymentResponse = await fetch("https://infest-2k25-registration-page.onrender.com/create-payment-order", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ amount: 100, currency: "INR" })  // Amount in INR
+                    body: JSON.stringify({ amount: 250, currency: "INR" })  // Amount in INR
                 });
     
                 const paymentResult = await paymentResponse.json();
