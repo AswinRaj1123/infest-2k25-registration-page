@@ -13,8 +13,13 @@ from datetime import datetime
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from fastapi import Request
+import logging
 load_dotenv()
 os.makedirs("qrcodes", exist_ok=True)
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 app = FastAPI()
