@@ -330,6 +330,32 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
     
+    async function fetchUserData(ticket_id) {
+        try {
+            const response = await fetch(`https://infest-2k25-registration-page.onrender.com/user/${ticket_id}`);
+            const data = await response.json();
+    
+            if (response.ok) {
+                document.getElementById("ticket-name").textContent = data.name;
+                document.getElementById("ticket-email").textContent = data.email;
+                document.getElementById("ticket-events").textContent = data.events.join(", ");
+                document.getElementById("ticket-department").textContent = data.department;
+                document.getElementById("ticket-payment-status").textContent = data.payment_mode === "online" ? "Paid" : "Payment Pending";
+            } else {
+                alert("User data not found. Please check your registration details.");
+            }
+        } catch (error) {
+            console.error("Error fetching user data:", error);
+        }
+    }
+    
+    // Call this function after successful registration
+    submitButton.addEventListener("click", async function (event) {
+        event.preventDefault();
+        
+        // Fetch user details using the ticket_id
+        fetchUserData(registrationIDElement.textContent);
+    });    
 
     // ✅ Copy Registration ID to Clipboard
     copyIDButton.addEventListener("click", function () {

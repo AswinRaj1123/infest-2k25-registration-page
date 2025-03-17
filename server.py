@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins (Change to specific origins for security)
+    allow_origins=["https://infest-2k25-registration-page.onrender.com"],  # Allow all origins (Change to specific origins for security)
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
@@ -310,3 +310,10 @@ async def register_user(data: RegistrationData):
     email_sent = send_email(data.email, ticket_id, qr_path, user_data)
 
     return {"status": "success", "ticket_id": ticket_id, "qr_code": qr_path, "email_sent": email_sent}
+
+@app.get("/user/{ticket_id}")
+async def get_user(ticket_id: str):
+    user = collection.find_one({"ticket_id": ticket_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
