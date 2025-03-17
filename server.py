@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://infest-2k25-registration-page.onrender.com"],  # Allow all origins (Change to specific origins for security)
+    allow_origins=["*"],  # Allow all origins (Change to specific origins for security)
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
