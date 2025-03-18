@@ -129,7 +129,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Function to create an order on server
     async function createOrder(userData) {
         try {
-            const response = await fetch("https://infest-2k25-registration-page.railway.internal/create-order", {
+            const response = await fetch("https://infest-2k25-registration-page.onrender.com/create-order", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ amount: 250 * 100, currency: "INR" })
@@ -159,7 +159,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         try {
-            const response = await fetch("https://infest-2k25-registration-page.railway.internal/register", {
+            const response = await fetch("https://infest-2k25-registration-page.onrender.com/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(userData)
@@ -242,7 +242,7 @@ document.addEventListener("DOMContentLoaded", function () {
     
         try {
             // Step 1: Register the user
-            const registrationResponse = await fetch("https://infest-2k25-registration-page.railway.internal/register", {
+            const registrationResponse = await fetch("https://infest-2k25-registration-page.onrender.com/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(userData)
@@ -273,7 +273,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
     
                 // ✅ If "Online Payment" is selected, create Razorpay order
-                const paymentResponse = await fetch("https://infest-2k25-registration-page.railway.internal/create-payment-order", {
+                const paymentResponse = await fetch("https://infest-2k25-registration-page.onrender.com/create-payment-order", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ amount: 250, currency: "INR" })  // Amount in INR
