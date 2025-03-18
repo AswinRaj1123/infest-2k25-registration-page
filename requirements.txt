@@ -1,7 +1,7 @@
 fastapi
 uvicorn
 pymongo
-qrcode
 python-dotenv
 razorpay
+qrcode
 setuptools
