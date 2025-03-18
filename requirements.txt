@@ -4,3 +4,4 @@ pymongo
 qrcode
 python-dotenv
 razorpay
+setuptools
