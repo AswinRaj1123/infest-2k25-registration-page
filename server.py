@@ -10,6 +10,7 @@ import random
 import os
 import razorpay
 from fastapi import FastAPI
+from fastapi.responses import Response
 from datetime import datetime
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -269,4 +270,4 @@ async def razorpay_webhook(webhook_data: dict):
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"}
+    return Response(status_code=200)
