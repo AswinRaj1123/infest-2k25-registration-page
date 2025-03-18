@@ -313,7 +313,3 @@ async def register_user(data: RegistrationData):
     email_sent = send_email(data.email, ticket_id, qr_path, user_data)
 
     return {"status": "success", "ticket_id": ticket_id, "qr_code": qr_path, "email_sent": email_sent}
-
-port = int(os.environ.get("PORT", 8000))
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=port)
