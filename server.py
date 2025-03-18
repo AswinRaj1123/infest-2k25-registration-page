@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 from fastapi import Request
 import logging
 load_dotenv()
+import uvicorn
 os.makedirs("qrcodes", exist_ok=True)
 
 # Configure logging
@@ -310,3 +311,7 @@ async def register_user(data: RegistrationData):
     email_sent = send_email(data.email, ticket_id, qr_path, user_data)
 
     return {"status": "success", "ticket_id": ticket_id, "qr_code": qr_path, "email_sent": email_sent}
+
+import os
+port = int(os.environ.get("PORT", 8000))
+uvicorn.run(app, host="0.0.0.0", port=port)
