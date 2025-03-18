@@ -9,11 +9,13 @@ from pymongo import MongoClient
 import random
 import os
 import razorpay
+from fastapi import FastAPI
 from datetime import datetime
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from fastapi import Request
 import logging
+
 load_dotenv()
 import uvicorn
 os.makedirs("qrcodes", exist_ok=True)
@@ -312,6 +314,6 @@ async def register_user(data: RegistrationData):
 
     return {"status": "success", "ticket_id": ticket_id, "qr_code": qr_path, "email_sent": email_sent}
 
-import os
 port = int(os.environ.get("PORT", 8000))
-uvicorn.run(app, host="0.0.0.0", port=port)
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=port)

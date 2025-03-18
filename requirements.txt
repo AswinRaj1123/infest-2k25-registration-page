@@ -1,8 +1,6 @@
 fastapi
 uvicorn
 pymongo
-qrcode[pil]
-python-multipart
-pydantic
+qrcode
 python-dotenv
 razorpay
