@@ -12,11 +12,13 @@ import razorpay
 from fastapi.responses import Response
 from fastapi import FastAPI
 from datetime import datetime
+from flask import Flask, request, jsonify
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from fastapi import Request
 import logging
 
+app = Flask(__name__)
 load_dotenv()
 import uvicorn
 os.makedirs("qrcodes", exist_ok=True)
@@ -44,11 +46,6 @@ collection = db["registrations"]
 # Email Configuration
 EMAIL_USER = (os.getenv("EMAIL_USER"))
 EMAIL_PASS = (os.getenv("EMAIL_PASS"))
-
-# Initialize Razorpay client - Replace with your actual keys
-RAZORPAY_KEY_ID = (os.getenv("RAZORPAY_KEY_ID"))
-RAZORPAY_KEY_SECRET = (os.getenv("RAZORPAY_KEY_SECRET"))
-razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
 # Pydantic Model for Validation
 class RegistrationData(BaseModel):
@@ -129,71 +126,9 @@ def send_email(user_email, ticket_id, qr_path, user_data):
         return False
 
 
-
-@app.post("/create-payment-order")
-async def create_payment_order(request: Request):
-    data = await request.json()
-    amount = data.get("amount")  # Amount in INR (e.g., 100 for ₹100)
-    currency = data.get("currency", "INR")
-
-    try:
-        # Convert amount to the smallest currency unit (e.g., paise for INR)
-        amount_in_paise = amount * 100
-
-        # Create Razorpay order
-        order = razorpay_client.order.create({
-            "amount": amount_in_paise,
-            "currency": currency,
-            "payment_capture": 1  # Auto-capture payment
-        })
-
-        return {"status": "success", "order_id": order["id"]}
-    except Exception as e:
-        print("Error creating Razorpay order:", e)
-        raise HTTPException(status_code=500, detail="Error creating payment order. Please try again.")
         
 # API to Verify Payment
-@app.post("/verify-payment")
-async def verify_payment(payment_data: PaymentVerification):
-    try:
-        # Build the parameters dict to verify signature
-        params_dict = {
-            'razorpay_order_id': payment_data.razorpay_order_id,
-            'razorpay_payment_id': payment_data.razorpay_payment_id,
-            'razorpay_signature': payment_data.razorpay_signature
-        }
-        
-        # Verify signature
-        razorpay_client.utility.verify_payment_signature(params_dict)
-        
-        # If verification successful, update registration data and save
-        registration_data = payment_data.registration_data
-        registration_data['payment_id'] = payment_data.razorpay_payment_id
-        registration_data['payment_status'] = "paid"
-        registration_data['payment_time'] = datetime.now().isoformat()
-        registration_data['payment_order_id'] = payment_data.razorpay_order_id
-        
-        # Generate ticket ID
-        ticket_id = generate_ticket_id()
-        registration_data['ticket_id'] = ticket_id
-        
-        # Save registration data
-        collection.insert_one(registration_data)
-        
-        # Generate QR Code
-        qr_path = generate_qr(ticket_id)
-        
-        # Send email notification
-        email_sent = send_email(registration_data['email'], ticket_id, qr_path, registration_data)
-        
-        return {
-            "status": "success", 
-            "ticket_id": ticket_id, 
-            "payment_status": "paid",
-            "email_sent": email_sent
-        }
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Payment verification failed: {str(e)}")
+
 
 # API to Handle Registration (for both online and offline payments)
 @app.post("/register")
@@ -259,31 +194,27 @@ async def check_payment_status(ticket_id: str):
         raise HTTPException(status_code=500, detail=f"Error checking payment status: {str(e)}")
 
 # Webhook for Razorpay (for automatic payment verification)
-@app.post("/razorpay-webhook")
-async def razorpay_webhook(webhook_data: dict):
-    try:
-        # Verify webhook signature if Razorpay provides one
-        # Process payment notification
-        if webhook_data.get("event") == "payment.authorized":
-            payment_id = webhook_data.get("payload", {}).get("payment", {}).get("entity", {}).get("id")
-            order_id = webhook_data.get("payload", {}).get("payment", {}).get("entity", {}).get("order_id")
-            
-            if payment_id and order_id:
-                # Update registration record with payment info
-                collection.update_one(
-                    {"payment_order_id": order_id},
-                    {"$set": {
-                        "payment_id": payment_id,
-                        "payment_status": "paid",
-                        "payment_webhook_time": datetime.now().isoformat()
-                    }}
-                )
-                
-        return {"status": "success"}
-    except Exception as e:
-        print(f"Webhook Error: {e}")
-        # We return 200 even for errors to acknowledge receipt
-        return {"status": "error", "detail": str(e)}
+@app.route('/webhook', methods=['POST'])
+def razorpay_webhook():
+    payload = request.get_json()
+
+    # Check if the event is for payment capture
+    if payload.get('event') == 'payment.captured':
+        payment_data = payload['payload']['payment']['entity']
+        payment_id = payment_data['id']
+        amount = payment_data['amount'] / 100  # Convert paisa to INR
+        email = payment_data['email']
+
+        print(f"Payment Successful: ₹{amount} - Payment ID: {payment_id} - Email: {email}")
+        
+        # Add logic to update your database or trigger confirmation email
+        return jsonify({"status": "success"}), 200
+
+    return jsonify({"status": "ignored"}), 200
+
+if __name__ == '__main__':
+    app.run(port=5000)
+
     
 @app.post("/register")
 async def register_user(data: RegistrationData):
