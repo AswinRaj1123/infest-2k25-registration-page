@@ -210,7 +210,7 @@ def razorpay_webhook():
 
     return jsonify({"status": "ignored"}), 200
 
-if __name__ == '__main__':
+if __name__ == '__server__':
     app.run(port=5000)
 
     
