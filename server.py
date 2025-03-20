@@ -309,3 +309,7 @@ app.add_middleware(
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
 )
+
+@app.get("/health")
+async def health_check():
+    return Response(status_code=200)
