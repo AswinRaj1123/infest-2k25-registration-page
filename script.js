@@ -7,15 +7,16 @@ document.addEventListener("DOMContentLoaded", function () {
     const backToEventsBtn = document.getElementById("back-to-events");
     const submitButton = document.getElementById("submit-registration");
     const successContainer = document.getElementById("success-container");
+    const pendingContainer = document.getElementById("pending-container");
     const registrationForm = document.getElementById("registration-form");
     const registrationIDElement = document.getElementById("registration-id");
     const copyIDButton = document.getElementById("copy-id");
     const ticketQRCode = document.getElementById("qrcode");
-    const ticketPaymentStatus = document.getElementById("ticket-payment-status");
+    const paymentRedirectBtn = document.getElementById("payment-redirect-btn");
+    const checkStatusBtn = document.getElementById("check-status-btn");
     let currentStep = 0;
-    let paymentId = null;
-    let orderId = null;
-    let registrationData = null;
+    let currentRegistrationId = null;
+    let paymentUrl = null;
 
     // ✅ Function to update form steps and progress bar
     function updateStep(step) {
@@ -27,20 +28,6 @@ document.addEventListener("DOMContentLoaded", function () {
             stepElement.classList.toggle("active", index === step);
             stepElement.classList.toggle("completed", index < step);
         });
-        window.scrollTo(0, 0);
-        // Scroll to top of the form
-    
-        // Then, if needed, scroll to the specific section
-        if (formSections[step]) {
-            // You can adjust this timeout if needed
-            setTimeout(() => {
-                // Force scroll to top of the window
-                window.scrollTo({
-                    top: 0,
-                    behavior: 'smooth'
-                });
-            }, 10);
-        }
     }
 
     // ✅ Event Listener for Next Step Button
@@ -78,85 +65,38 @@ document.addEventListener("DOMContentLoaded", function () {
             updateStep(currentStep);
         }
     });
-    document.getElementById("submit-registration").addEventListener('click', function(event) {
-        const button = event.target;
 
-        // Disable the button
-        button.disabled = true;
+    // ✅ Form Submission - Sends data to backend and redirects to payment
+    submitButton.addEventListener("click", async function (event) {
+        event.preventDefault();
 
-        // Change button text to indicate waiting
-        button.textContent = "Please wait...";
-        
-    });
+        // Get form values
+        const name = document.getElementById("name").value;
+        const email = document.getElementById("email").value;
+        const phone = document.getElementById("phone").value;
+        const whatsapp = document.getElementById("whatsapp").value;
+        const college = document.getElementById("college").value;
+        const year = document.getElementById("year").value;
+        const department = document.getElementById("department").value;
+        const payment_mode = document.querySelector("input[name='payment-mode']:checked").value;
 
-    // Function to initialize Razorpay payment
-    function initializeRazorpay(userData, orderId) {
-        const options = {
-            key: "rzp_test_0DbywO9fUpbt3w", // Replace with your Razorpay key
-            amount: 250 * 100, // Amount in paise (250 INR)
-            currency: "INR",
-            name: "INFEST 2K25",
-            description: "Registration Fee",
-            image: "infest-2k25 logo.png",
-            order_id: orderId,
-            handler: function (response) {
-                // Payment successful
-                paymentId = response.razorpay_payment_id;
-                completeRegistration(userData, paymentId);
-            },
-            prefill: {
-                name: userData.name,
-                email: userData.email,
-                contact: userData.phone
-            },
-            notes: {
-                address: "INFO Institute of Engineering, Coimbatore"
-            },
-            theme: {
-                color: "#3399cc"
-            },
-            modal: {
-                ondismiss: function() {
-                    alert("Payment cancelled. Your registration is not complete.");
-                }
-            }
+        // Get selected events
+        const selectedEvents = [];
+        document.querySelectorAll("input[name='selected_events[]']:checked").forEach(event => {
+            selectedEvents.push(event.value);
+        });
+
+        // Validate form
+        if (!name || !email || !phone || !college || !year || !department || selectedEvents.length === 0) {
+            alert("Please fill in all required fields and select at least one event.");
+            return;
+        }
+
+        // Prepare data object
+        const userData = {
+            name, email, phone, whatsapp, college, year, department,
+            events: selectedEvents, payment_mode
         };
-        
-        const rzp = new Razorpay(options);
-        rzp.open();
-    }
-
-    // Function to create an order on server
-    async function createOrder(userData) {
-        try {
-            const response = await fetch("https://infest-2k25-registration-page.onrender.com/create-order", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ amount: 250 * 100, currency: "INR" })
-            });
-            
-            const result = await response.json();
-            if (result.status === "success") {
-                return result.order_id;
-            } else {
-                throw new Error(result.detail || "Could not create order");
-            }
-        } catch (error) {
-            console.error("Order Creation Error:", error);
-            alert("Error creating payment order. Please try again.");
-            return null;
-        }
-    }
-
-    // Function to complete registration after payment
-    async function completeRegistration(userData, paymentId = null) {
-        // Add payment ID if payment was made
-        if (paymentId) {
-            userData.payment_id = paymentId;
-            userData.payment_status = "paid";
-        } else {
-            userData.payment_status = "pending";
-        }
 
         try {
             const response = await fetch("https://infest-2k25-registration-page.onrender.com/register", {
@@ -167,176 +107,105 @@ document.addEventListener("DOMContentLoaded", function () {
             
             const result = await response.json();
 
-            if (result.status === "success") {
-                // Hide form & show confirmation
-                registrationForm.classList.add("hidden");
-                successContainer.classList.remove("hidden");
-
-                // Display Ticket ID
-                registrationIDElement.textContent = result.ticket_id;
-
-                // Generate QR Code
-                new QRCode(ticketQRCode, {
-                    text: result.ticket_id,
-                    width: 160,
-                    height: 160
-                });
-
-                // Update payment status display
-                if (userData.payment_status === "paid") {
-                    ticketPaymentStatus.className = "ticket-status paid";
-                    ticketPaymentStatus.innerHTML = '<span class="status-icon"></span><span class="status-text">Payment Completed</span>';
-                    
-                    // Hide offline payment message if already paid
-                    const offlineMessage = document.getElementById("offline-message");
-                    if (offlineMessage) {
-                        offlineMessage.classList.add("hidden");
-                    }
-                }
-
-                // Update ticket info
-                document.getElementById("ticket-name").textContent = userData.name;
-                document.getElementById("ticket-email").textContent = userData.email;
-                document.getElementById("ticket-events").textContent = userData.events.join(", ");
+            if (response.ok) {
+                // Store registration ID and payment URL
+                currentRegistrationId = result.registration_id;
+                paymentUrl = result.payment_url;
                 
-                // Get department full name
-                const deptSelect = document.getElementById("department");
-                const selectedOption = deptSelect.options[deptSelect.selectedIndex];
-                document.getElementById("ticket-department").textContent = selectedOption.textContent;
-
-                alert("Registration Successful! Check your email.");
+                // Hide form & show pending payment container
+                registrationForm.classList.add("hidden");
+                pendingContainer.classList.remove("hidden");
+                
+                // Display Registration ID
+                if (registrationIDElement) {
+                    registrationIDElement.textContent = currentRegistrationId;
+                }
+                
+                // Set up payment redirect button
+                if (paymentRedirectBtn) {
+                    paymentRedirectBtn.addEventListener("click", function() {
+                        window.location.href = paymentUrl;
+                    });
+                }
+                
+                // Save registration ID to localStorage for later status checks
+                localStorage.setItem("infestRegistrationId", currentRegistrationId);
+                
+                alert("Registration initiated! Click the button to proceed to payment.");
             } else {
-                alert(`Error: ${result.detail || 'Could not process registration.'}`);
+                alert(`Error: ${result.detail || "Could not process registration."}`);
             }
         } catch (error) {
             console.error("Registration Error:", error);
             alert("An error occurred. Please try again.");
         }
+    });
+
+    // ✅ Check Registration Status
+    function checkRegistrationStatus(registrationId) {
+        fetch(`https://infest-2k25-registration-page.onrender.com/registration/${registrationId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Registration not found");
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.payment_status === "completed" && data.ticket_id) {
+                    // Payment completed, show success screen
+                    pendingContainer.classList.add("hidden");
+                    successContainer.classList.remove("hidden");
+                    
+                    // Display Ticket ID
+                    document.getElementById("ticket-id").textContent = data.ticket_id;
+                    
+                    // Generate QR Code
+                    if (ticketQRCode) {
+                        ticketQRCode.innerHTML = ''; // Clear previous QR code
+                        new QRCode(ticketQRCode, {
+                            text: data.ticket_id,
+                            width: 160,
+                            height: 160
+                        });
+                    }
+                    
+                    // Show success message
+                    alert("Registration and payment completed! Check your email for details.");
+                } else {
+                    // Still pending
+                    alert(`Payment status: ${data.payment_status}. Please complete payment to receive your ticket.`);
+                }
+            })
+            .catch(error => {
+                console.error("Status check error:", error);
+                alert("Could not verify registration status. Please try again later.");
+            });
     }
 
-    // ✅ Form Submission
-    submitButton.addEventListener("click", async function (event) {
-        event.preventDefault();
-    
-        // Get form values
-        const name = document.getElementById("name").value;
-        const email = document.getElementById("email").value;
-        const phone = document.getElementById("phone").value;
-        const whatsapp = document.getElementById("whatsapp").value;
-        const college = document.getElementById("college").value;
-        const year = document.getElementById("year").value;
-        const department = document.getElementById("department").value;
-        const payment_mode = document.querySelector("input[name='payment-mode']:checked").value;
-    
-        // Get selected events
-        const selectedEvents = [];
-        document.querySelectorAll("input[name='selected_events[]']:checked").forEach(event => {
-            selectedEvents.push(event.value);
-        });
-    
-        // Prepare data object
-        const userData = {
-            name, email, phone, whatsapp, college, year, department,
-            events: selectedEvents, payment_mode
-        };
-    
-        try {
-            // Step 1: Register the user
-            const registrationResponse = await fetch("https://infest-2k25-registration-page.onrender.com/register", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(userData)
-            });
-    
-            const registrationResult = await registrationResponse.json();
-    
-            if (registrationResult.status === "success") {
-                if (payment_mode === "offline") {
-                    // ✅ If "Pay at Venue" is selected, show the confirmation page directly
-                    registrationForm.classList.add("hidden");
-                    successContainer.classList.remove("hidden");
-    
-                    registrationIDElement.textContent = registrationResult.ticket_id;
-    
-                    new QRCode(ticketQRCode, {
-                        text: registrationResult.ticket_id,
-                        width: 160,
-                        height: 160
-                    });
-    
-                    // Update ticket status to "Payment Pending"
-                    document.getElementById("ticket-payment-status").classList.add("pending");
-                    document.getElementById("ticket-payment-status").innerHTML = `<span class="status-icon"></span><span class="status-text">Payment Pending</span>`;
-    
-                    alert("Registration Successful! Please pay at the venue.");
-                    return;
-                }
-    
-                // ✅ If "Online Payment" is selected, create Razorpay order
-                const paymentResponse = await fetch("https://infest-2k25-registration-page.onrender.com/create-payment-order", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ amount: 250, currency: "INR" })  // Amount in INR
-                });
-    
-                const paymentResult = await paymentResponse.json();
-    
-                if (paymentResult.status === "success") {
-                    // ✅ Open Razorpay payment modal
-                    const options = {
-                        key: "rzp_test_0DbywO9fUpbt3w",  // Replace with your Razorpay key ID
-                        amount: 250 * 100,  // Amount in paise
-                        currency: "INR",
-                        order_id: paymentResult.order_id,
-                        name: "INFEST 2K25",
-                        description: "Payment for INFEST 2K25 registration",
-                        handler: function (response) {
-                            alert("Payment successful! Payment ID: " + response.razorpay_payment_id);
-                            registrationForm.classList.add("hidden");
-                            successContainer.classList.remove("hidden");
-    
-                            registrationIDElement.textContent = registrationResult.ticket_id;
-    
-                            new QRCode(ticketQRCode, {
-                                text: registrationResult.ticket_id,
-                                width: 160,
-                                height: 160
-                            });
-    
-                            document.getElementById("ticket-payment-status").classList.remove("pending");
-                            document.getElementById("ticket-payment-status").innerHTML = `<span class="status-icon"></span><span class="status-text">Payment Completed</span>`;
-                        },
-                        prefill: {
-                            name: name,
-                            email: email,
-                            contact: phone
-                        },
-                        theme: {
-                            color: "#3399cc"
-                        }
-                    };
-    
-                    const rzp = new Razorpay(options);
-                    rzp.open();
-                } else {
-                    alert("Error creating payment order. Please try again.");
-                }
+    // ✅ Check Status Button
+    if (checkStatusBtn) {
+        checkStatusBtn.addEventListener("click", function() {
+            const savedRegistrationId = localStorage.getItem("infestRegistrationId") || currentRegistrationId;
+            
+            if (savedRegistrationId) {
+                checkRegistrationStatus(savedRegistrationId);
             } else {
-                alert("Error: Could not process registration.");
+                const manualId = prompt("Please enter your registration ID:");
+                if (manualId) {
+                    checkRegistrationStatus(manualId);
+                }
             }
-        } catch (error) {
-            console.error("Registration Error:", error);
-            alert("An error occurred. Please try again.");
-        }
-    });
-        
+        });
+    }
 
     // ✅ Copy Registration ID to Clipboard
-    copyIDButton.addEventListener("click", function () {
-        navigator.clipboard.writeText(registrationIDElement.textContent)
-            .then(() => alert("Registration ID copied!"))
-            .catch(err => console.error("Failed to copy ID:", err));
-    });
+    if (copyIDButton) {
+        copyIDButton.addEventListener("click", function () {
+            navigator.clipboard.writeText(registrationIDElement.textContent)
+                .then(() => alert("Registration ID copied!"))
+                .catch(err => console.error("Failed to copy ID:", err));
+        });
+    }
 
     // ✅ Limit Event Selection to 3
     document.querySelectorAll("input[name='selected_events[]']").forEach(checkbox => {
@@ -347,6 +216,49 @@ document.addEventListener("DOMContentLoaded", function () {
                 alert("You can only select up to 3 events.");
             }
         });
+    });
+
+    // ✅ Check if returning from payment page
+    window.addEventListener("load", function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const registrationId = urlParams.get("registration_id");
+        const paymentStatus = urlParams.get("payment_status");
+        
+        if (registrationId) {
+            // Show the pending container
+            registrationForm.classList.add("hidden");
+            pendingContainer.classList.remove("hidden");
+            currentRegistrationId = registrationId;
+            
+            if (registrationIDElement) {
+                registrationIDElement.textContent = registrationId;
+            }
+            
+            // If payment status is included in URL, show appropriate message
+            if (paymentStatus === "success") {
+                checkRegistrationStatus(registrationId);
+            }
+        }
+        
+        // Check if there's a saved registration in progress
+        const savedRegistrationId = localStorage.getItem("infestRegistrationId");
+        if (savedRegistrationId && !registrationId) {
+            const resumeRegistration = confirm("You have a registration in progress. Would you like to check its status?");
+            if (resumeRegistration) {
+                registrationForm.classList.add("hidden");
+                pendingContainer.classList.remove("hidden");
+                currentRegistrationId = savedRegistrationId;
+                
+                if (registrationIDElement) {
+                    registrationIDElement.textContent = savedRegistrationId;
+                }
+                
+                checkRegistrationStatus(savedRegistrationId);
+            } else {
+                // Clear saved registration if user doesn't want to resume
+                localStorage.removeItem("infestRegistrationId");
+            }
+        }
     });
 
     // ✅ Initialize Step 1
