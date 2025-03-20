@@ -8,14 +8,12 @@ from email.mime.image import MIMEImage
 from pymongo import MongoClient
 import random
 import os
-import razorpay
 from fastapi.responses import Response
 from fastapi import FastAPI
 from datetime import datetime
 from flask import Flask, request, jsonify
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from fastapi import Request
 import logging
 
 app = Flask(__name__)
@@ -48,7 +46,7 @@ EMAIL_USER = (os.getenv("EMAIL_USER"))
 EMAIL_PASS = (os.getenv("EMAIL_PASS"))
 
 # Pydantic Model for Validation
-class RegistrationData(BaseModel):
+class RegistrationData(BaseModel):#
     name: str
     email: str
     phone: str
@@ -62,14 +60,14 @@ class RegistrationData(BaseModel):
     payment_id: str = None
     payment_status: str = "pending"
 
-class OrderRequest(BaseModel):
-    amount: int
+#class OrderRequest(BaseModel):
+  #  amount: int
 
-class PaymentVerification(BaseModel):
-    razorpay_order_id: str
-    razorpay_payment_id: str
-    razorpay_signature: str
-    registration_data: dict
+#class PaymentVerification(BaseModel):
+  #  razorpay_order_id: str
+  #  razorpay_payment_id: str
+   # razorpay_signature: str
+   # registration_data: dict
 
 # Function to Generate Ticket ID
 def generate_ticket_id():
