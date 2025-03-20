@@ -6,3 +6,4 @@ razorpay
 qrcode
 setuptools
 pillow
+flask
