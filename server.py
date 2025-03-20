@@ -195,23 +195,17 @@ async def check_payment_status(ticket_id: str):
 @app.route('/webhook', methods=['POST'])
 def razorpay_webhook():
     payload = request.get_json()
+    if not payload:
+        return jsonify({"error": "Invalid data"}), 400
 
-    # Check if the event is for payment capture
+    print("Received Webhook:", payload)
+
     if payload.get('event') == 'payment.captured':
-        payment_data = payload['payload']['payment']['entity']
-        payment_id = payment_data['id']
-        amount = payment_data['amount'] / 100  # Convert paisa to INR
-        email = payment_data['email']
-
-        print(f"Payment Successful: ₹{amount} - Payment ID: {payment_id} - Email: {email}")
-        
-        # Add logic to update your database or trigger confirmation email
         return jsonify({"status": "success"}), 200
-
     return jsonify({"status": "ignored"}), 200
 
-if __name__ == '__server__':
-    app.run(port=5000)
+if __name__ == '__main__':
+    app.run(port=5000, debug=True)
 
     
 @app.post("/register")
