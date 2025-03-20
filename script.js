@@ -88,7 +88,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Validate form
         if (!name || !email || !phone || !college || !year || !department || selectedEvents.length === 0) {
-            alert("Please fill in all required fields and select at least one event.");
+            alert("Please fill in all required fields and select at least three event.");
             return;
         }
 
