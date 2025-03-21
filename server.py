@@ -198,11 +198,28 @@ async def razorpay_webhook(request: Request):
         payment_id = payload["payload"]["payment"]["entity"]["id"]
         amount = payload["payload"]["payment"]["entity"]["amount"] / 100  # Convert paise to INR
         
-        print(f"✅ Payment Successful: ₹{amount} - Payment ID: {payment_id}")
+        try:
+            # Find the registration with this payment_id and update payment status
+            result = collection.update_one(
+                {"payment_id": payment_id},
+                {"$set": {"payment_status": "paid"}}
+            )
+            
+            if result.modified_count > 0:
+                logger.info(f"✅ Payment Successful: ₹{amount} - Payment ID: {payment_id} - Database updated")
+                return {"status": "success", "message": "Payment recorded and database updated"}
+            else:
+                logger.warning(f"⚠️ Payment received but no matching registration found: {payment_id}")
+                return {"status": "warning", "message": "Payment recorded but no matching registration found"}
         
-        return {"status": "success"}
-
-    return {"status": "ignored"}
+        except Exception as e:
+            logger.error(f"❌ Database error while updating payment: {str(e)}")
+            return JSONResponse(
+                status_code=500,
+                content={"status": "error", "message": f"Database error: {str(e)}"}
+            )
+    
+    return {"status": "ignored", "message": "Event not relevant for processing"}
 
 
 
