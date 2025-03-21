@@ -252,7 +252,8 @@ async def razorpay_webhook(request: Request):
 
     return {"status": "ignored"}
 
-
+if __name__ == '__main__':
+    app.run(port=5000, debug=True)
     
 @app.post("/register")
 async def register_user(data: RegistrationData):
