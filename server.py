@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Form
+from fastapi import FastAPI, HTTPException, Form,Request
 from pydantic import BaseModel
 import qrcode
 import smtplib
@@ -15,10 +15,11 @@ from flask import Flask, request, jsonify
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import logging
+import uvicorn
 
 app = Flask(__name__)
 load_dotenv()
-import uvicorn
+
 os.makedirs("qrcodes", exist_ok=True)
 
 # Configure logging
@@ -122,7 +123,21 @@ def send_email(user_email, ticket_id, qr_path, user_data):
     except Exception as e:
         print("Email Error:", e)
         return False
-
+@app.post("/webhook")
+async def razorpay_webhook(request: Request):
+    payload = await request.json()
+    
+    if payload.get("event") == "payment.captured":
+        payment_id = payload["payload"]["payment"]["entity"]["id"]
+        amount = payload["payload"]["payment"]["entity"]["amount"] / 100  # Convert paise to INR
+        
+        print(f"✅ Payment Successful: ₹{amount} - Payment ID: {payment_id}")
+        
+        # Add logic to update your database with payment status
+        
+        return {"status": "success"}
+    
+    return {"status": "ignored"}
 
         
 # API to Verify Payment

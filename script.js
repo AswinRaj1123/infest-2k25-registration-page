@@ -66,63 +66,63 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // Function to initialize Razorpay payment
-    function initializeRazorpay(userData, orderId) {
-        const options = {
-            key: "rzp_test_0DbywO9fUpbt3w", // Replace with your Razorpay key
-            amount: 25000, // Amount in paise (250 INR)
-            currency: "INR",
-            name: "INFEST 2K25",
-            description: "Registration Fee",
-            image: "infest-2k25 logo.png",
-            order_id: orderId,
-            handler: function (response) {
+    // function initializeRazorpay(userData, orderId) {
+        // const options = {
+            // key: "rzp_test_0DbywO9fUpbt3w", // Replace with your Razorpay key
+            // amount: 25000, // Amount in paise (250 INR)
+            // currency: "INR",
+            // name: "INFEST 2K25",
+            // description: "Registration Fee",
+            // image: "infest-2k25 logo.png",
+            // order_id: orderId,
+            // handler: function (response) {
                 // Payment successful
-                paymentId = response.razorpay_payment_id;
-                completeRegistration(userData, paymentId);
-            },
-            prefill: {
-                name: userData.name,
-                email: userData.email,
-                contact: userData.phone
-            },
-            notes: {
-                address: "INFO Institute of Engineering, Coimbatore"
-            },
-            theme: {
-                color: "#3399cc"
-            },
-            modal: {
-                ondismiss: function() {
-                    alert("Payment cancelled. Your registration is not complete.");
-                }
-            }
-        };
+                // paymentId = response.razorpay_payment_id;
+                // completeRegistration(userData, paymentId);
+            // },
+            // prefill: {
+                // // name: userData.name,
+                // // email: userData.email,
+                // contact: userData.phone
+            // },
+            // notes: {
+                // address: "INFO Institute of Engineering, Coimbatore"
+            // },
+            // theme: {
+                // color: "#3399cc"
+            // },
+            // modal: {
+                // ondismiss: function() {
+                    // alert("Payment cancelled. Your registration is not complete.");
+                // }
+            // }
+        // };
         
-        const rzp = new Razorpay(options);
-        rzp.open();
-    }
+        // const rzp = new Razorpay(options);
+        // rzp.open();
+    // }
 
     // Function to create an order on server
-    async function createOrder(userData) {
-        try {
-            const response = await fetch("https://infest-2k25-registration-page.onrender.com/create-order", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ amount: 250 })
-            });
+    // async function createOrder(userData) {
+        // try {
+            // const response = await fetch("https://infest-2k25-registration-page.onrender.com/create-order", {
+                // method: "POST",
+                // headers: { "Content-Type": "application/json" },
+                // body: JSON.stringify({ amount: 250 })
+            // });
             
-            const result = await response.json();
-            if (result.status === "success") {
-                return result.order_id;
-            } else {
-                throw new Error(result.detail || "Could not create order");
-            }
-        } catch (error) {
-            console.error("Order Creation Error:", error);
-            alert("Error creating payment order. Please try again.");
-            return null;
-        }
-    }
+            // const result = await response.json();
+            // if (result.status === "success") {
+                // return result.order_id;
+            // } else {
+                // throw new Error(result.detail || "Could not create order");
+            // }
+        // } catch (error) {
+            // console.error("Order Creation Error:", error);
+            // alert("Error creating payment order. Please try again.");
+            // return null;
+        // }
+    // }
 
     // Function to complete registration after payment
     async function completeRegistration(userData, paymentId = null) {
