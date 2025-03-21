@@ -21,6 +21,7 @@ from fastapi.responses import JSONResponse
 
 # app = Flask(__name__)
 load_dotenv()
+PORT = int(os.getenv("PORT", 10000))
 
 os.makedirs("qrcodes", exist_ok=True)
 
@@ -251,7 +252,7 @@ async def razorpay_webhook(request: Request):
     return {"status": "ignored"}
 
 if __name__ == '__main__':
-    uvicorn.run(port=5000, debug=True)
+    uvicorn.run(port=PORT, debug=True)
     
 @app.post("/register")
 async def register_user(data: RegistrationData):
