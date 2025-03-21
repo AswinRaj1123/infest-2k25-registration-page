@@ -11,16 +11,15 @@ import os
 from fastapi.responses import Response
 from fastapi import FastAPI
 from datetime import datetime
-from flask import Flask, request, jsonify
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import logging
 import uvicorn
-import razorpay
 from fastapi.responses import JSONResponse
+# from flask import Flask, request, jsonify
 
 
-app = Flask(__name__)
+# app = Flask(__name__)
 load_dotenv()
 
 os.makedirs("qrcodes", exist_ok=True)
@@ -252,7 +251,7 @@ async def razorpay_webhook(request: Request):
     return {"status": "ignored"}
 
 if __name__ == '__main__':
-    app.run(port=5000, debug=True)
+    uvicorn.run(port=5000, debug=True)
     
 @app.post("/register")
 async def register_user(data: RegistrationData):
