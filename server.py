@@ -252,7 +252,8 @@ async def razorpay_webhook(request: Request):
     return {"status": "ignored"}
 
 if __name__ == '__main__':
-    uvicorn.run(port=PORT, debug=True)
+    uvicorn.run(app, host="0.0.0.0", port=PORT, reload=True)
+
     
 @app.post("/register")
 async def register_user(data: RegistrationData):
