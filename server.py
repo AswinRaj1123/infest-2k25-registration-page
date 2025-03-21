@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Form,Request
+from fastapi import FastAPI, HTTPException,Request
 from pydantic import BaseModel
 import qrcode
 import smtplib
@@ -9,17 +9,13 @@ from pymongo import MongoClient
 import random
 import os
 from fastapi.responses import Response
-from fastapi import FastAPI
 from datetime import datetime
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import logging
 import uvicorn
 from fastapi.responses import JSONResponse
-# from flask import Flask, request, jsonify
 
-
-# app = Flask(__name__)
 load_dotenv()
 os.makedirs("qrcodes", exist_ok=True)
 
@@ -129,51 +125,6 @@ def send_email(user_email, ticket_id, qr_path, user_data):
 async def root():
     return {"message": "Server is running"}
 
-
-
-
-
-# razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
-
-# @app.post("/create-order")
-# async def create_order(amount: int, currency: str = "INR"):
-#     try:
-#         # Convert amount to paise (Razorpay expects amount in paise)
-#         amount_paise = amount * 100  
-
-#         order_data = {
-#             "amount": amount_paise,
-#             "currency": currency,
-#             "payment_capture": 1  # Auto-capture payment
-#         }
-
-#         order = razorpay_client.order.create(data=order_data)
-#         return JSONResponse(content={"order_id": order["id"], "amount": amount_paise})
-    
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-
-# @app.post("/webhook")
-# async def razorpay_webhook(request: Request):
-#     payload = await request.json()
-    
-#     if payload.get("event") == "payment.captured":
-#         payment_id = payload["payload"]["payment"]["entity"]["id"]
-#         amount = payload["payload"]["payment"]["entity"]["amount"] / 100  # Convert paise to INR
-        
-#         print(f"✅ Payment Successful: ₹{amount} - Payment ID: {payment_id}")
-        
-#         # Add logic to update your database with payment status
-        
-#         return {"status": "success"}
-    
-#     return {"status": "ignored"}
-
-        
-# # API to Verify Payment
-
-
-# # API to Handle Registration (for both online and offline payments)
 app.post("/register")
 async def register_user(data: RegistrationData):
      # If it's an online payment with payment_id, verify payment status
@@ -289,5 +240,5 @@ async def register_user(data: RegistrationData):
 @app.get("/health")
 async def health_check():
     return Response(status_code=200)
-if __name__ == '__main__':
-    uvicorn.run(app, host="0.0.0.0", port=5000)
+# if __name__ == '__main__':
+    # uvicorn.run(app, host="0.0.0.0", port=5000)
