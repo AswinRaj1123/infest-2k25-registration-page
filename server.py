@@ -304,7 +304,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins (Change to specific origins for security)
+    allow_origins=["https://infest.in"],  # Allow all origins (Change to specific origins for security)
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
