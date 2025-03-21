@@ -16,6 +16,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import logging
 import uvicorn
+import razorpay
+from fastapi.responses import JSONResponse
+
 
 app = Flask(__name__)
 load_dotenv()
@@ -123,6 +126,30 @@ def send_email(user_email, ticket_id, qr_path, user_data):
     except Exception as e:
         print("Email Error:", e)
         return False
+
+
+
+
+razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+
+@app.post("/create-order")
+async def create_order(amount: int, currency: str = "INR"):
+    try:
+        # Convert amount to paise (Razorpay expects amount in paise)
+        amount_paise = amount * 100  
+
+        order_data = {
+            "amount": amount_paise,
+            "currency": currency,
+            "payment_capture": 1  # Auto-capture payment
+        }
+
+        order = razorpay_client.order.create(data=order_data)
+        return JSONResponse(content={"order_id": order["id"], "amount": amount_paise})
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/webhook")
 async def razorpay_webhook(request: Request):
     payload = await request.json()
@@ -206,21 +233,25 @@ async def check_payment_status(ticket_id: str):
             raise e
         raise HTTPException(status_code=500, detail=f"Error checking payment status: {str(e)}")
 
-# Webhook for Razorpay (for automatic payment verification)
-@app.route('/webhook', methods=['POST'])
-def razorpay_webhook():
-    payload = request.get_json()
-    if not payload:
-        return jsonify({"error": "Invalid data"}), 400
+from fastapi import FastAPI, Request
 
-    print("Received Webhook:", payload)
+app = FastAPI()
 
-    if payload.get('event') == 'payment.captured':
-        return jsonify({"status": "success"}), 200
-    return jsonify({"status": "ignored"}), 200
+@app.post("/razorpay-webhook")
+async def razorpay_webhook(request: Request):
+    payload = await request.json()
+    event = payload.get("event", "")
 
-if __name__ == '__main__':
-    app.run(port=5000, debug=True)
+    if event == "payment.captured":
+        payment_id = payload["payload"]["payment"]["entity"]["id"]
+        amount = payload["payload"]["payment"]["entity"]["amount"] / 100  # Convert paise to INR
+        
+        print(f"✅ Payment Successful: ₹{amount} - Payment ID: {payment_id}")
+        
+        return {"status": "success"}
+
+    return {"status": "ignored"}
+
 
     
 @app.post("/register")
