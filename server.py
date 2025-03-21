@@ -127,6 +127,11 @@ def send_email(user_email, ticket_id, qr_path, user_data):
         print("Email Error:", e)
         return False
 
+@app.get("/")
+async def root():
+    return {"message": "Server is running"}
+
+
 
 
 
