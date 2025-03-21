@@ -176,49 +176,49 @@ async def root():
 
 
 # # API to Handle Registration (for both online and offline payments)
-# @app.post("/register")
-# async def register_user(data: RegistrationData):
-#     # If it's an online payment with payment_id, verify payment status
-#     if data.payment_mode == "online" and data.payment_id:
-#         try:
-#             # You might want to verify the payment with Razorpay here
-#             # For now, we'll trust the client-side verification and just mark it as paid
-#             payment_status = "paid"
-#         except Exception as e:
-#             payment_status = "failed"
-#             raise HTTPException(status_code=400, detail=f"Payment verification failed: {str(e)}")
-#     else:
-#         # For offline payment or if payment_id is not provided
-#         payment_status = "pending"
+app.post("/register")
+async def register_user(data: RegistrationData):
+     # If it's an online payment with payment_id, verify payment status
+    if data.payment_mode == "online" and data.payment_id:
+         try:
+             # You might want to verify the payment with Razorpay here
+             # For now, we'll trust the client-side verification and just mark it as paid
+             payment_status = "paid"
+         except Exception as e:
+             payment_status = "failed"
+             raise HTTPException(status_code=400, detail=f"Payment verification failed: {str(e)}")
+    else:
+         # For offline payment or if payment_id is not provided
+         payment_status = "pending"
     
-#     # Generate ticket ID
-#     ticket_id = generate_ticket_id()
+     # Generate ticket ID
+    ticket_id = generate_ticket_id()
     
-#     # Generate QR Code
-#     qr_path = generate_qr(ticket_id)
+     # Generate QR Code
+    qr_path = generate_qr(ticket_id)
     
-#     # Update user data
-#     user_data = data.dict()
-#     user_data["ticket_id"] = ticket_id
-#     user_data["payment_status"] = payment_status
-#     user_data["registration_time"] = datetime.now().isoformat()
+     # Update user data
+    user_data = data.dict()
+    user_data["ticket_id"] = ticket_id
+    user_data["payment_status"] = payment_status
+    user_data["registration_time"] = datetime.now().isoformat()
     
-#     try:
-#         # Save to database
-#         collection.insert_one(user_data)
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=f"Database Error: {str(e)}")
+    try:
+         # Save to database
+         collection.insert_one(user_data)
+    except Exception as e:
+         raise HTTPException(status_code=500, detail=f"Database Error: {str(e)}")
     
-#     # Send confirmation email
-#     email_sent = send_email(data.email, ticket_id, qr_path, user_data)
+     # Send confirmation email
+    email_sent = send_email(data.email, ticket_id, qr_path, user_data)
     
-#     return {
-#         "status": "success", 
-#         "ticket_id": ticket_id, 
-#         "qr_code": qr_path, 
-#         "email_sent": email_sent,
-#         "payment_status": payment_status
-#     }
+    return {
+         "status": "success", 
+         "ticket_id": ticket_id, 
+         "qr_code": qr_path, 
+         "email_sent": email_sent,
+         "payment_status": payment_status
+     }
 
 # # API endpoint to check payment status (useful for verifying after redirect)
 # @app.get("/payment-status/{ticket_id}")
