@@ -294,6 +294,9 @@ function showTicket(ticketId, userData, paymentStatus) {
             // Create order ID first
             
             window.location.href = "https://rzp.io/rzp/qE5ylHJ";
+            if(paymentId) {
+                completeRegistration(userData, paymentId);
+            }
          
         } else {
             // If offline payment, complete registration without payment
