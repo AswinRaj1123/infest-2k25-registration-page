@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 import logging
 import uvicorn
 from fastapi.responses import JSONResponse
+from starlette.responses import RedirectResponse
 
 load_dotenv()
 os.makedirs("qrcodes", exist_ok=True)
@@ -175,6 +176,8 @@ async def razorpay_webhook(request: Request):
     if payload.get('event') == "payment.captured":
         payment_id = payload["payload"]["payment"]["entity"]["id"]
         amount = payload["payload"]["payment"]["entity"]["amount"] / 100  # Convert paise to INR
+        return RedirectResponse(url="https://infest-2k25-registration-page.onrender.com/register")
+    else:
         
         try:
             # Find the registration with this payment_id and update payment status
@@ -196,8 +199,7 @@ async def razorpay_webhook(request: Request):
                 status_code=500,
                 content={"status": "error", "message": f"Database error: {str(e)}"}
             )
-    
-    return {"status": "ignored", "message": "Event not relevant for processing"}
+
 
 
 
