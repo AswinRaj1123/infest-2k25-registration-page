@@ -295,19 +295,6 @@ function showTicket(ticketId, userData, paymentStatus) {
             
             window.location.href = "https://rzp.io/rzp/qE5ylHJ";
          
-            // if (orderId) {
-            //     // Add Razorpay script dynamically if not already loaded
-            //     if (!window.Razorpay) {
-            //         const script = document.createElement("script");
-            //         script.src = "https://checkout.razorpay.com/v1/checkout.js";
-            //         script.onload = function() {
-            //             initializeRazorpay(userData, orderId);
-            //         };
-            //         document.body.appendChild(script);
-            //     } else {
-            //         initializeRazorpay(userData, orderId);
-            //     }
-            // }
         } else {
             // If offline payment, complete registration without payment
             completeRegistration(userData);
