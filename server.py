@@ -14,8 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import logging
 import uvicorn
-from fastapi.responses import JSONResponse
-from starlette.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 
 load_dotenv()
 os.makedirs("qrcodes", exist_ok=True)
@@ -59,6 +58,14 @@ class RegistrationData(BaseModel):#
     payment_id: str = None
     payment_status: str = "pending"
 
+#class OrderRequest(BaseModel):
+  #  amount: int
+
+#class PaymentVerification(BaseModel):
+  #  razorpay_order_id: str
+  #  razorpay_payment_id: str
+   # razorpay_signature: str
+   # registration_data: dict
 
 # Function to Generate Ticket ID
 def generate_ticket_id():
@@ -168,9 +175,7 @@ async def razorpay_webhook(request: Request):
     if payload.get('event') == "payment.captured":
         payment_id = payload["payload"]["payment"]["entity"]["id"]
         amount = payload["payload"]["payment"]["entity"]["amount"] / 100  # Convert paise to INR
-        return RedirectResponse(url="https://infest-2k25-registration-page.onrender.com/register")
-    else:
-        
+
         try:
             # Find the registration with this payment_id and update payment status
             result = collection.update_one(
@@ -180,9 +185,13 @@ async def razorpay_webhook(request: Request):
             
             if result.modified_count > 0:
                 logger.info(f"✅ Payment Successful: ₹{amount} - Payment ID: {payment_id} - Database updated")
-                return {"status": "success", "message": "Payment recorded and database updated"}
+                # Fetch the ticket ID from the database
+                registration = collection.find_one({"payment_id": payment_id})
+                ticket_id = registration["ticket_id"]
+                # Redirect to the tickets page with the ticket ID
+                return RedirectResponse(url=f"/ticket.html?ticketId={ticket_id}")
             else:
-                logger.warning(f"⚠️ Payment received but no matching registration found: {payment_id}")
+                logger.warning(f"⚠ Payment received but no matching registration found: {payment_id}")
                 return {"status": "warning", "message": "Payment recorded but no matching registration found"}
         
         except Exception as e:
@@ -191,14 +200,19 @@ async def razorpay_webhook(request: Request):
                 status_code=500,
                 content={"status": "error", "message": f"Database error: {str(e)}"}
             )
+    else:
+        return {"status": "error", "message": "Invalid event type"}
 
+
+        
+       
 
 
 
     
 @app.post("/register")
 async def register_user(data: RegistrationData):
-    # Check if the user is already registered
+     # Check if the user is already registered
     existing_registration = collection.find_one({"email": data.email})
     
     if existing_registration:
@@ -229,5 +243,21 @@ async def register_user(data: RegistrationData):
 @app.get("/health")
 async def health_check():
     return Response(status_code=200)
-# if __name__ == '__main__':
-    # uvicorn.run(app, host="0.0.0.0", port=5000)
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+    
+@app.get("/api/ticket/{ticket_id}")
+async def get_ticket_details(ticket_id: str):
+    registration = collection.find_one({"ticket_id": ticket_id})
+    if registration:
+        return {
+            "ticket_id": registration["ticket_id"],
+            "name": registration["name"],
+            "email": registration["email"],
+            "events": registration["events"],
+            "payment_status": registration["payment_status"],
+            "qr_code": registration["qr_code"]
+        }
+    else:
+        raise HTTPException(status_code=404, detail="Ticket not found")
