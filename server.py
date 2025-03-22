@@ -59,14 +59,6 @@ class RegistrationData(BaseModel):#
     payment_id: str = None
     payment_status: str = "pending"
 
-#class OrderRequest(BaseModel):
-  #  amount: int
-
-#class PaymentVerification(BaseModel):
-  #  razorpay_order_id: str
-  #  razorpay_payment_id: str
-   # razorpay_signature: str
-   # registration_data: dict
 
 # Function to Generate Ticket ID
 def generate_ticket_id():
