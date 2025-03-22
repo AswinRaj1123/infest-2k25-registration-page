@@ -168,28 +168,6 @@ async def register_user(data: RegistrationData):
          "email_sent": email_sent,
          "payment_status": payment_status
      }
-
-# # API endpoint to check payment status (useful for verifying after redirect)
-# @app.get("/payment-status/{ticket_id}")
-# async def check_payment_status(ticket_id: str):
-#     try:
-#         registration = collection.find_one({"ticket_id": ticket_id})
-#         if not registration:
-#             raise HTTPException(status_code=404, detail="Registration not found")
-        
-#         return {
-#             "status": "success",
-#             "ticket_id": ticket_id,
-#             "payment_status": registration.get("payment_status", "pending")
-#         }
-#     except Exception as e:
-#         if isinstance(e, HTTPException):
-#             raise e
-#         raise HTTPException(status_code=500, detail=f"Error checking payment status: {str(e)}")
-
-# from fastapi import FastAPI, Request
-
-# app = FastAPI()
 @app.post("/webhook")
 async def razorpay_webhook(request: Request):
     payload = await request.json()
