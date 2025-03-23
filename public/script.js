@@ -1,45 +1,16 @@
 document.addEventListener("DOMContentLoaded", function () {
     const urlParams = new URLSearchParams(window.location.search);
     const isPaymentSuccess = urlParams.get("payment");
-    const paymentId = urlParams.get("razorpay_payment_id");
-    
-    // Check for payment success in URL parameters
-    if (isPaymentSuccess === "success" || paymentId) {
-        // Retrieve stored registration data
+
+    if (isPaymentSuccess === "success") {
+
+        // Assume the user data was stored in localStorage before redirection
         const savedUserData = localStorage.getItem("registrationData");
         if (savedUserData) {
             const userData = JSON.parse(savedUserData);
-            // Add payment status to userData
-            userData.payment_status = "paid";
-            // Use actual payment ID from URL if available
-            completeRegistration(userData, paymentId || "razorpay_payment_id_here");
-        } else {
-            console.error("No registration data found in localStorage");
-            alert("Payment successful but registration data is missing. Please contact support.");
+            completeRegistration(userData, paymentId = null); 
         }
     } else {
-        // Check if this is a return from payment but without success parameters
-        // This helps recover from failed redirects
-        const hasStoredData = localStorage.getItem("registrationData");
-        const lastPaymentAttempt = localStorage.getItem("paymentAttemptTime");
-        
-        // If there's stored data and a recent payment attempt (within last 10 minutes)
-        if (hasStoredData && lastPaymentAttempt) {
-            const attemptTime = parseInt(lastPaymentAttempt, 10);
-            const currentTime = new Date().getTime();
-            const timeDiff = (currentTime - attemptTime) / (1000 * 60); // in minutes
-            
-            if (timeDiff < 10) {
-                // Ask user if payment was completed
-                if (confirm("Did you complete the payment? Click OK if payment was successful, Cancel if not.")) {
-                    const userData = JSON.parse(hasStoredData);
-                    userData.payment_status = "paid";
-                    completeRegistration(userData);
-                    return;
-                }
-            }
-        }
-        
         updateStep(0); // Start at step 1 normally
     }
 
@@ -57,6 +28,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const ticketQRCode = document.getElementById("qrcode");
     const ticketPaymentStatus = document.getElementById("ticket-payment-status");
     let currentStep = 0;
+    let paymentId = null;
+    let orderId = null;
     let registrationData = null;
 
     // ✅ Function to update form steps and progress bar
@@ -69,8 +42,6 @@ document.addEventListener("DOMContentLoaded", function () {
             stepElement.classList.toggle("active", index === step);
             stepElement.classList.toggle("completed", index < step);
         });
-        
-        currentStep = step;
     }
 
     // ✅ Event Listener for Next Step Button
@@ -108,32 +79,16 @@ document.addEventListener("DOMContentLoaded", function () {
             updateStep(currentStep);
         }
     });
-    
     // Function to complete registration after payment
     async function completeRegistration(userData, paymentId = null) {
         try {
-            // Add payment ID if payment was made
-            if (paymentId) {
-                userData.payment_id = paymentId;
-            }
-            
             // 🔹 Call Webhook API (POST) - No output display
-            try {
-                await fetch("/webhook", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        event: "payment_success",
-                        payment_id: paymentId,
-                        user_data: userData
-                    })
-                });
-            } catch (webhookError) {
-                console.error("Webhook error:", webhookError);
-                // Continue with registration even if webhook fails
-            }
+            await fetch("/webhook", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                    });
+        // Add payment ID if payment was made
 
-            // Process registration
             try {
                 const response = await fetch("https://infest-2k25-registration-page.onrender.com/register", {
                     method: "POST",
@@ -144,10 +99,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 const result = await response.json();
 
                 if (result.status === "success") {
-                    // Clear localStorage after successful registration
-                    localStorage.removeItem("registrationData");
-                    localStorage.removeItem("paymentAttemptTime");
-                    
                     // Hide form & show confirmation
                     registrationForm.classList.add("hidden");
                     successContainer.classList.remove("hidden");
@@ -179,14 +130,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     document.getElementById("ticket-email").textContent = userData.email;
                     document.getElementById("ticket-events").textContent = userData.events.join(", ");
                     
-                    // Get department full name if department select exists
+                    // Get department full name
                     const deptSelect = document.getElementById("department");
-                    if (deptSelect) {
-                        const selectedOption = deptSelect.options[deptSelect.selectedIndex];
-                        document.getElementById("ticket-department").textContent = selectedOption.textContent;
-                    } else {
-                        document.getElementById("ticket-department").textContent = userData.department;
-                    }
+                    const selectedOption = deptSelect.options[deptSelect.selectedIndex];
+                    document.getElementById("ticket-department").textContent = selectedOption.textContent;
 
                     alert("Registration Successful! Check your email.");
                 } else {
@@ -197,10 +144,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 alert("An error occurred. Please try again.");
             } 
         } catch (error) {
-            console.error("Error processing requests:", error);
+                    console.error("Error processing requests:", error);
         }
     }
-    
     // ✅ Form Submission
     submitButton.addEventListener("click", async function (event) {
         event.preventDefault();
@@ -233,18 +179,26 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Handle different payment methods
         if (paymentMode === "online") {
-            // Store data before redirect
             localStorage.setItem("registrationData", JSON.stringify(userData));
-            // Store timestamp of payment attempt
-            localStorage.setItem("paymentAttemptTime", new Date().getTime().toString());
+            // Create order ID first
             
-            // Redirect to Razorpay with return URL that includes success parameter
-            const returnUrl = encodeURIComponent(window.location.origin + window.location.pathname + "?payment=success");
-            window.location.href = `https://rzp.io/rzp/qE5ylHJ#?return_url=${returnUrl}`;
+            window.location.href = "https://rzp.io/rzp/qE5ylHJ";
+         
+            // if (orderId) {
+            //     // Add Razorpay script dynamically if not already loaded
+            //     if (!window.Razorpay) {
+            //         const script = document.createElement("script");
+            //         script.src = "https://checkout.razorpay.com/v1/checkout.js";
+            //         script.onload = function() {
+            //             initializeRazorpay(userData, orderId);
+            //         };
+            //         document.body.appendChild(script);
+            //     } else {
+            //         initializeRazorpay(userData, orderId);
+            //     }
+            // }
         } else {
-            // For offline payment, set status accordingly
-            userData.payment_status = "pending";
-            // Complete registration without payment
+            // If offline payment, complete registration without payment
             completeRegistration(userData);
         }
     });
@@ -266,4 +220,35 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     });
+
+    // document.addEventListener("DOMContentLoaded", function() {
+    //     const form = document.getElementById("registration-form");
+    
+    //     form.addEventListener("submit", function(event) {
+    //         event.preventDefault();
+    //         const formData = new FormData(form);
+    //         const data = Object.fromEntries(formData.entries());
+    
+    //         fetch("/register", {
+    //             method: "POST",
+    //             headers: {
+    //                 "Content-Type": "application/json"
+    //             },
+    //             body: JSON.stringify(data)
+    //         })
+    //         .then(response => response.json())
+    //         .then(data => {
+    //             if (data.status === "success") {
+    //                 window.location.href = `/ticket.html?ticketId=${data.ticket_id}`;
+    //             } else {
+    //                 alert("Registration failed. Please try again.");
+    //             }
+    //         })
+    //         .catch(error => {
+    //             console.error("Error:", error);
+    //         });
+    //     });
+    // });
+    
+
 });
