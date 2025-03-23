@@ -124,50 +124,8 @@ def send_email(user_email, ticket_id, qr_path, user_data):
 @app.get("/")
 async def root():
     return {"message": "Server is running"}
+    
 
-app.post("/register")
-async def register_user(data: RegistrationData):
-     # If it's an online payment with payment_id, verify payment status
-    if data.payment_mode == "online" and data.payment_id:
-         try:
-             # You might want to verify the payment with Razorpay here
-             # For now, we'll trust the client-side verification and just mark it as paid
-             payment_status = "paid"
-         except Exception as e:
-             payment_status = "failed"
-             raise HTTPException(status_code=400, detail=f"Payment verification failed: {str(e)}")
-    else:
-         # For offline payment or if payment_id is not provided
-         payment_status = "pending"
-    
-     # Generate ticket ID
-    ticket_id = generate_ticket_id()
-    
-     # Generate QR Code
-    qr_path = generate_qr(ticket_id)
-    
-     # Update user data
-    user_data = data.dict()
-    user_data["ticket_id"] = ticket_id
-    user_data["payment_status"] = payment_status
-    user_data["registration_time"] = datetime.now().isoformat()
-    
-    try:
-         # Save to database
-         collection.insert_one(user_data)
-    except Exception as e:
-         raise HTTPException(status_code=500, detail=f"Database Error: {str(e)}")
-    
-     # Send confirmation email
-    email_sent = send_email(data.email, ticket_id, qr_path, user_data)
-    
-    return {
-         "status": "success", 
-         "ticket_id": ticket_id, 
-         "qr_code": qr_path, 
-         "email_sent": email_sent,
-         "payment_status": payment_status
-     }
 @app.post("/webhook")
 async def razorpay_webhook(request: Request):
     payload = await request.json()
@@ -204,41 +162,39 @@ async def razorpay_webhook(request: Request):
         return {"status": "error", "message": "Invalid event type"}
 
 
-        
-       
 
-
-
-    
 @app.post("/register")
 async def register_user(data: RegistrationData):
-     # Check if the user is already registered
-    existing_registration = collection.find_one({"email": data.email})
     
-    if existing_registration:
-        return {
-            "status": "success",
-            "ticket_id": existing_registration["ticket_id"],
-            "qr_code": existing_registration["qr_code"],
-            "email_sent": False  # No need to send email again
-        }
-    
-    # Generate new ticket ID and QR code
+    # Generate a unique ticket ID
+        # Generate ticket ID
     ticket_id = generate_ticket_id()
+    
+     # Generate QR Code
     qr_path = generate_qr(ticket_id)
-
+    
+     # Update user data
     user_data = data.dict()
     user_data["ticket_id"] = ticket_id
-    user_data["qr_code"] = qr_path  # Store QR code path in the database
-
+    user_data["payment_status"] = user_data.get('payment_status')
+    user_data["registration_time"] = datetime.now().isoformat()
+    
     try:
-        collection.insert_one(user_data)
+         # Save to database
+         collection.insert_one(user_data)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database Error: {str(e)}")
-
+         raise HTTPException(status_code=500, detail=f"Database Error: {str(e)}")
+    
+     # Send confirmation email
     email_sent = send_email(data.email, ticket_id, qr_path, user_data)
-
-    return {"status": "success", "ticket_id": ticket_id, "qr_code": qr_path, "email_sent": email_sent}
+    
+    return {
+         "status": "success", 
+         "ticket_id": ticket_id, 
+         "qr_code": qr_path, 
+         "email_sent": email_sent,
+         "payment_status": user_data.get('payment_status')
+     }
 
 @app.get("/health")
 async def health_check():
@@ -247,17 +203,17 @@ if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
     
-@app.get("/api/ticket/{ticket_id}")
-async def get_ticket_details(ticket_id: str):
-    registration = collection.find_one({"ticket_id": ticket_id})
-    if registration:
-        return {
-            "ticket_id": registration["ticket_id"],
-            "name": registration["name"],
-            "email": registration["email"],
-            "events": registration["events"],
-            "payment_status": registration["payment_status"],
-            "qr_code": registration["qr_code"]
-        }
-    else:
-        raise HTTPException(status_code=404, detail="Ticket not found")
+# @app.get("/api/ticket/{ticket_id}")
+# async def get_ticket_details(ticket_id: str):
+#     registration = collection.find_one({"ticket_id": ticket_id})
+#     if registration:
+#         return {
+#             "ticket_id": registration["ticket_id"],
+#             "name": registration["name"],
+#             "email": registration["email"],
+#             "events": registration["events"],
+#             "payment_status": registration["payment_status"],
+#             "qr_code": registration["qr_code"]
+#         }
+#     else:
+#         raise HTTPException(status_code=404, detail="Ticket not found")
