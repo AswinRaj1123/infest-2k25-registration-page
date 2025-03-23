@@ -129,6 +129,7 @@ async def root():
 @app.post("/webhook")
 async def razorpay_webhook(request: Request):
     payload = await request.json()
+    print("Webhook Data:", payload)
 
     if payload.get('event') == "payment.captured":
         payment_id = payload["payload"]["payment"]["entity"]["id"]
