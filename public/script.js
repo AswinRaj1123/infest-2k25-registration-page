@@ -202,6 +202,36 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
+    // document.addEventListener("DOMContentLoaded", function() {
+    //     const form = document.getElementById("registration-form");
+    
+    //     form.addEventListener("submit", function(event) {
+    //         event.preventDefault();
+    //         const formData = new FormData(form);
+    //         const data = Object.fromEntries(formData.entries());
+    
+    //         fetch("/register", {
+    //             method: "POST",
+    //             headers: {
+    //                 "Content-Type": "application/json"
+    //             },
+    //             body: JSON.stringify(data)
+    //         })
+    //         .then(response => response.json())
+    //         .then(data => {
+    //             if (data.status === "success") {
+    //                 window.location.href = `/ticket.html?ticketId=${data.ticket_id}`;
+    //             } else {
+    //                 alert("Registration failed. Please try again.");
+    //             }
+    //         })
+    //         .catch(error => {
+    //             console.error("Error:", error);
+    //         });
+    //     });
+    // });
+    
+
     // ✅ Initialize Step 1
     updateStep(currentStep);
 });
