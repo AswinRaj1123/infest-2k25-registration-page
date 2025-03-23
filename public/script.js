@@ -252,5 +252,4 @@ document.addEventListener("DOMContentLoaded", function () {
     
 
     // ✅ Initialize Step 1
-    updateStep(currentStep);
 });
