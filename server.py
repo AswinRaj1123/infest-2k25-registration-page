@@ -118,7 +118,7 @@ def send_email(user_email, ticket_id, qr_path, user_data):
 async def root():
     return {"message": "Server is running"}
 
-app.post("/register")
+@app.post("/register")
 async def register_user(data: RegistrationData):
      # If it's an online payment with payment_id, verify payment status
     if data.payment_mode == "online" and data.payment_id:
@@ -164,6 +164,7 @@ async def register_user(data: RegistrationData):
 @app.post("/webhook")
 async def razorpay_webhook(request: Request):
     payload = await request.json()
+    print("Webhook Data:", payload)
 
     if payload.get('event') == "payment.captured":
         payment_id = payload["payload"]["payment"]["entity"]["id"]
@@ -191,6 +192,8 @@ async def razorpay_webhook(request: Request):
                 status_code=500,
                 content={"status": "error", "message": f"Database error: {str(e)}"}
             )
+
+
 
 
 
