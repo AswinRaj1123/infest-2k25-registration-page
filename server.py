@@ -194,6 +194,35 @@ async def razorpay_webhook(request: Request):
                 content={"status": "error", "message": f"Database error: {str(e)}"}
             )
 
+@app.post("/register")
+async def register_user(data: RegistrationData):
+    # Check if the user is already registered
+    existing_registration = collection.find_one({"email": data.email})
+    
+    if existing_registration:
+        return {
+            "status": "success",
+            "ticket_id": existing_registration["ticket_id"],
+            "qr_code": existing_registration["qr_code"],
+            "email_sent": False  # No need to send email again
+        }
+    
+    # Generate new ticket ID and QR code
+    ticket_id = generate_ticket_id()
+    qr_path = generate_qr(ticket_id)
+
+    user_data = data.dict()
+    user_data["ticket_id"] = ticket_id
+    user_data["qr_code"] = qr_path  # Store QR code path in the database
+
+    try:
+        collection.insert_one(user_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database Error: {str(e)}")
+
+    email_sent = send_email(data.email, ticket_id, qr_path, user_data)
+
+    return {"status": "success", "ticket_id": ticket_id, "qr_code": qr_path, "email_sent": email_sent}
 
 @app.get("/health")
 async def health_check():
