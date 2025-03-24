@@ -126,43 +126,6 @@ async def root():
     return {"message": "Server is running"}
     
 
-@app.post("/webhook")
-async def razorpay_webhook(request: Request):
-    payload = await request.json()
-    print("Webhook Data:", payload)
-
-    if payload.get('event') == "payment.captured":
-        payment_id = payload["payload"]["payment"]["entity"]["id"]
-        amount = payload["payload"]["payment"]["entity"]["amount"] / 100  # Convert paise to INR
-
-        try:
-            # Find the registration with this payment_id and update payment status
-            result = collection.update_one(
-                {"payment_id": payment_id},
-                {"$set": {"payment_status": "paid"}}
-            )
-            
-            if result.modified_count > 0:
-                logger.info(f"✅ Payment Successful: ₹{amount} - Payment ID: {payment_id} - Database updated")
-                # Fetch the ticket ID from the database
-                registration = collection.find_one({"payment_id": payment_id})
-                ticket_id = registration["ticket_id"]
-                # Redirect to the tickets page with the ticket ID
-                return RedirectResponse(url=f"/ticket.html?ticketId={ticket_id}")
-            else:
-                logger.warning(f"⚠ Payment received but no matching registration found: {payment_id}")
-                return {"status": "warning", "message": "Payment recorded but no matching registration found"}
-        
-        except Exception as e:
-            logger.error(f"❌ Database error while updating payment: {str(e)}")
-            return JSONResponse(
-                status_code=500,
-                content={"status": "error", "message": f"Database error: {str(e)}"}
-            )
-    else:
-        return {"status": "error", "message": "Invalid event type"}
-
-
 
 @app.post("/register")
 async def register_user(data: RegistrationData):
@@ -204,17 +167,4 @@ if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
     
-# @app.get("/api/ticket/{ticket_id}")
-# async def get_ticket_details(ticket_id: str):
-#     registration = collection.find_one({"ticket_id": ticket_id})
-#     if registration:
-#         return {
-#             "ticket_id": registration["ticket_id"],
-#             "name": registration["name"],
-#             "email": registration["email"],
-#             "events": registration["events"],
-#             "payment_status": registration["payment_status"],
-#             "qr_code": registration["qr_code"]
-#         }
-#     else:
-#         raise HTTPException(status_code=404, detail="Ticket not found")
+

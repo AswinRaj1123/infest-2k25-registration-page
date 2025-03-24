@@ -1,19 +1,4 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const urlParams = new URLSearchParams(window.location.search);
-    const isPaymentSuccess = urlParams.get("payment");
-
-    if (isPaymentSuccess === "success") {
-
-        // Assume the user data was stored in localStorage before redirection
-        const savedUserData = localStorage.getItem("registrationData");
-        if (savedUserData) {
-            const userData = JSON.parse(savedUserData);
-            completeRegistration(userData, paymentId = null); 
-        }
-    } else {
-        updateStep(0); // Start at step 1 normally
-    }
-
     const steps = document.querySelectorAll(".step");
     const formSections = document.querySelectorAll(".form-section");
     const nextStepBtn = document.getElementById("next-step-btn");
@@ -87,12 +72,6 @@ document.addEventListener("DOMContentLoaded", function () {
         } else {
             userData.payment_status = "pending";
         }
-        try {
-            // 🔹 Call Webhook API (POST) - No output display
-            await fetch("/webhook", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                    });
         // Add payment ID if payment was made
 
             try {
@@ -149,10 +128,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.error("Registration Error:", error);
                 alert("An error occurred. Please try again.");
             } 
-        } catch (error) {
-                    console.error("Error processing requests:", error);
-        }
-    }
+        } 
     // ✅ Form Submission
     submitButton.addEventListener("click", async function (event) {
         event.preventDefault();
@@ -185,10 +161,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Handle different payment methods
         if (paymentMode === "online") {
-            localStorage.setItem("registrationData", JSON.stringify(userData));
-            // Create order ID first
             
-            window.location.href = "https://rzp.io/rzp/qE5ylHJ";
+            
          
             // if (orderId) {
             //     // Add Razorpay script dynamically if not already loaded
